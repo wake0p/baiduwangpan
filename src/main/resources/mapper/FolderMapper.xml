@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netdisk.fileop.Mapper.FolderMapper">
+
+    <!-- ===================== 基础查询 ===================== -->
+    <select id="getFoldersByFolderId" resultType="com.baidu.netdisk.entity.Folder">
+        SELECT * FROM folder
+        WHERE parent_id = #{folderId}
+          AND status = 1
+          AND is_deleted = 0
+    </select>
+
+    <select id="getFolderById" resultType="com.baidu.netdisk.entity.Folder">
+        SELECT * FROM folder
+        WHERE id = #{folderId}
+          AND status = 1
+    </select>
+
+    <select id="getFolderByNameAndParentId" resultType="com.baidu.netdisk.entity.Folder">
+        SELECT * FROM folder
+        WHERE folder_name = #{folderName}
+          AND parent_id = #{parentId}
+          AND status = 1
+          AND is_deleted = 0
+    </select>
+
+    <select id="getRootFolderByUserId" resultType="com.baidu.netdisk.entity.Folder">
+        SELECT * FROM folder
+        WHERE parent_id IS NULL
+          AND user_id = #{userId}
+          AND status = 1
+    </select>
+
+    <!-- ===================== 增删改操作 ===================== -->
+    <insert id="insertFolder" parameterType="com.baidu.netdisk.entity.Folder">
+        INSERT INTO folder (
+            folder_name,
+            parent_id,
+            user_id,
+            status,
+            folder_path,
+            create_time,
+            update_time
+        )
+        VALUES (
+                   #{folderName},
+                   #{parentId},
+                   #{userId},
+                   #{status},
+                   #{folderPath},
+                   NOW(),
+                   NOW()
+               )
+    </insert>
+
+    <update id="updateFolder">
+        UPDATE folder
+        SET folder_name = #{folderName},
+            parent_id = #{parentId},
+            user_id = #{userId},
+            status = #{status},
+            folder_path = #{folderPath},
+            is_deleted = #{isDeleted},
+            deleted_time = #{deletedTime},
+            deleted_by = #{deletedBy},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateFolderStatus">
+        UPDATE folder
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteFolder">
+        DELETE FROM folder
+        WHERE id = #{folderId}
+    </delete>
+
+    <!-- ===================== 递归查询 ===================== -->
+    <select id="getFolderTreeByParentId" resultType="com.baidu.netdisk.entity.Folder">
+        WITH RECURSIVE folder_tree AS (
+            SELECT *
+            FROM folder
+            WHERE id = #{parentId}
+              AND status = 1
+              AND is_deleted = 0
+
+            UNION ALL
+
+            SELECT f.*
+            FROM folder f
+                     JOIN folder_tree ft ON f.parent_id = ft.id
+            WHERE f.status = 1
+              AND f.is_deleted = 0
+        )
+        SELECT * FROM folder_tree
+    </select>
+
+    <!-- ===================== 回收站功能 ===================== -->
+    <!-- 1. 标记文件夹为已删除（移入回收站） -->
+    <update id="updateToRecycle">
+        UPDATE folder
+        SET is_deleted = 1,
+        deleted_time = NOW(),
+        deleted_by = #{userId},
+        update_time = NOW()
+        WHERE id IN
+        <foreach collection="folderIds" item="folderId" open="(" separator="," close=")">
+            #{folderId}
+        </foreach>
+        AND user_id = #{userId}
+        AND is_deleted = 0
+    </update>
+
+    <!-- 2. 从回收站恢复文件夹 -->
+    <update id="restoreFromRecycle">
+        UPDATE folder
+        SET is_deleted = 0,
+        deleted_time = NULL,
+        deleted_by = NULL,
+        update_time = NOW()
+        WHERE id IN
+        <foreach collection="folderIds" item="folderId" open="(" separator="," close=")">
+            #{folderId}
+        </foreach>
+        AND user_id = #{userId}
+        AND is_deleted = 1
+    </update>
+
+    <!-- 3. 彻底删除文件夹（物理删除） -->
+    <delete id="deleteFolderPermanently">
+        DELETE FROM folder
+        WHERE id IN
+        <foreach collection="folderIds" item="folderId" open="(" separator="," close=")">
+            #{folderId}
+        </foreach>
+        AND user_id = #{userId}
+        AND is_deleted = 1
+    </delete>
+
+    <!-- 4. 分页查询回收站文件夹 -->
+    <select id="getRecycleBinFolders" resultType="com.baidu.netdisk.entity.Folder">
+        SELECT * FROM folder
+        WHERE user_id = #{userId}
+          AND is_deleted = 1
+        ORDER BY deleted_time DESC
+            LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 5. 统计回收站文件夹总数 -->
+    <select id="getRecycleBinFolderCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM folder
+        WHERE user_id = #{userId}
+          AND is_deleted = 1
+    </select>
+
+</mapper>
