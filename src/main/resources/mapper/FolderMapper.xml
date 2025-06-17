@@ -1,34 +1,47 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.baidu.netdisk.fileop.Mapper.FolderMapper">
+    <resultMap id="FolderResultMap" type="com.baidu.netdisk.entity.Folder">
+        <id property="id" column="id" />
+        <result property="folderName" column="folder_name" />
+        <result property="folderPath" column="folder_path" />
+        <result property="parentId" column="parent_id" />
+        <result property="userId" column="user_id" />
+        <result property="status" column="status" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedTime" column="deleted_time" />
+        <result property="deletedBy" column="deleted_by" />
+    </resultMap>
 
     <!-- ===================== 基础查询 ===================== -->
-    <select id="getFoldersByFolderId" resultType="com.baidu.netdisk.entity.Folder">
+    <select id="getFoldersByFolderId" resultMap="FolderResultMap">
         SELECT * FROM folder
         WHERE parent_id = #{folderId}
-          AND status = 1
-          AND is_deleted = 0
+          AND status = true
+          AND is_deleted = false
     </select>
 
-    <select id="getFolderById" resultType="com.baidu.netdisk.entity.Folder">
+    <select id="getFolderById" resultMap="FolderResultMap">
         SELECT * FROM folder
         WHERE id = #{folderId}
-          AND status = 1
+          AND status = true
     </select>
 
-    <select id="getFolderByNameAndParentId" resultType="com.baidu.netdisk.entity.Folder">
+    <select id="getFolderByNameAndParentId" resultMap="FolderResultMap">
         SELECT * FROM folder
         WHERE folder_name = #{folderName}
           AND parent_id = #{parentId}
-          AND status = 1
-          AND is_deleted = 0
+          AND status = true
+          AND is_deleted = false
     </select>
 
-    <select id="getRootFolderByUserId" resultType="com.baidu.netdisk.entity.Folder">
+    <select id="getRootFolderByUserId" resultMap="FolderResultMap">
         SELECT * FROM folder
         WHERE parent_id IS NULL
           AND user_id = #{userId}
-          AND status = 1
+          AND status = true
     </select>
 
     <!-- ===================== 增删改操作 ===================== -->
@@ -85,16 +98,16 @@
             SELECT *
             FROM folder
             WHERE id = #{parentId}
-              AND status = 1
-              AND is_deleted = 0
+              AND status = true
+              AND is_deleted = false
 
             UNION ALL
 
             SELECT f.*
             FROM folder f
                      JOIN folder_tree ft ON f.parent_id = ft.id
-            WHERE f.status = 1
-              AND f.is_deleted = 0
+            WHERE f.status = true
+              AND f.is_deleted = false
         )
         SELECT * FROM folder_tree
     </select>
@@ -103,7 +116,7 @@
     <!-- 1. 标记文件夹为已删除（移入回收站） -->
     <update id="updateToRecycle">
         UPDATE folder
-        SET is_deleted = 1,
+        SET is_deleted = true,
         deleted_time = NOW(),
         deleted_by = #{userId},
         update_time = NOW()
@@ -112,13 +125,13 @@
             #{folderId}
         </foreach>
         AND user_id = #{userId}
-        AND is_deleted = 0
+        AND is_deleted = false
     </update>
 
     <!-- 2. 从回收站恢复文件夹 -->
     <update id="restoreFromRecycle">
         UPDATE folder
-        SET is_deleted = 0,
+        SET is_deleted = false,
         deleted_time = NULL,
         deleted_by = NULL,
         update_time = NOW()
@@ -127,7 +140,7 @@
             #{folderId}
         </foreach>
         AND user_id = #{userId}
-        AND is_deleted = 1
+        AND is_deleted = true
     </update>
 
     <!-- 3. 彻底删除文件夹（物理删除） -->
@@ -138,14 +151,14 @@
             #{folderId}
         </foreach>
         AND user_id = #{userId}
-        AND is_deleted = 1
+        AND is_deleted = true
     </delete>
 
     <!-- 4. 分页查询回收站文件夹 -->
     <select id="getRecycleBinFolders" resultType="com.baidu.netdisk.entity.Folder">
         SELECT * FROM folder
         WHERE user_id = #{userId}
-          AND is_deleted = 1
+          AND is_deleted = true
         ORDER BY deleted_time DESC
             LIMIT #{offset}, #{pageSize}
     </select>
@@ -154,7 +167,7 @@
     <select id="getRecycleBinFolderCount" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM folder
         WHERE user_id = #{userId}
-          AND is_deleted = 1
+          AND is_deleted = true
     </select>
 
 </mapper>

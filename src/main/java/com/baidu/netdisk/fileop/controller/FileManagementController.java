@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,10 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 
 @RestController
 @RequestMapping("/")
@@ -48,6 +53,35 @@ public class FileManagementController {
         return folderService.createFolder(folder);
     }
 
+    @PostMapping("/files")
+    public ResponseEntity<File> createFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("folderId") Long folderId,
+            @RequestParam("fileName") String fileName,
+            @RequestParam("fileType") String fileType,
+            @RequestParam("status") Boolean status,
+            // 可选：如果需要自定义文件名
+            @RequestParam("userId") @NotNull Long userId,
+            @RequestParam(value = "isDeleted", required = false, defaultValue = "false") Boolean isDeleted
+    ) {
+        try {
+            // 校验参数
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(null);
+            }
+
+            // 调用 FileService 处理文件上传和保存
+            File savedFile = fileService.createFile(file,folderId, fileName,fileType,status, userId,isDeleted);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedFile);
+        } catch (IllegalArgumentException e) {
+            log.error("创建文件失败，参数错误：{}", e.getMessage());
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            log.error("创建文件失败，用户ID：{}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
     // 重命名文件或文件夹
     @PutMapping("/{itemType}s/{itemId}/rename")
     public ResponseEntity<String> renameItem(@PathVariable String itemType, @PathVariable Long itemId, @RequestBody RenameRequest renameRequest) {
@@ -183,12 +217,33 @@ public class FileManagementController {
      */
     @PostMapping("/recycle/bin")
     public ResponseEntity<Void> moveToRecycleBin(
-            @RequestBody MoveToRecycleRequest request,
-            @RequestAttribute("userId") Long userId
+            @RequestBody MoveToRecycleRequest request
+
     ) {
-        fileService.moveToRecycleBin(request.getFileIds(), userId);
-        folderService.moveToRecycleBin(request.getFolderIds(), userId);
-        return ResponseEntity.ok().build();
+        Long userId = request.getUserId(); // 从请求体中获取userId
+
+        // 校验userId
+        if (userId == null || userId <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+        try {
+            // 校验参数
+            if (CollectionUtils.isEmpty(request.getFileIds()) && CollectionUtils.isEmpty(request.getFolderIds())) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // 执行移入回收站操作
+            fileService.moveToRecycleBin(request.getFileIds(), userId);
+            folderService.moveToRecycleBin(request.getFolderIds(), userId);
+
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            log.error("移入回收站失败，参数错误：{}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("移入回收站失败，用户ID：{}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
@@ -197,24 +252,56 @@ public class FileManagementController {
     @PostMapping("/recycle/bin/restore")
     public ResponseEntity<Void> restoreFromRecycleBin(
             @RequestBody RestoreRequest request,
-            @RequestAttribute("userId") Long userId
+            @RequestParam("userId") Long userId
     ) {
-        fileService.restoreFromRecycleBin(request.getFileIds(), userId);
-        folderService.restoreFromRecycleBin(request.getFolderIds(), userId);
-        return ResponseEntity.ok().build();
+        try {
+            // 校验参数
+            if (CollectionUtils.isEmpty(request.getFileIds()) && CollectionUtils.isEmpty(request.getFolderIds())) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // 执行恢复操作
+            fileService.restoreFromRecycleBin(request.getFileIds(), userId);
+            folderService.restoreFromRecycleBin(request.getFolderIds(), userId);
+
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            log.error("恢复失败，参数错误：{}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("恢复失败，用户ID：{}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
      * 彻底删除文件/文件夹
      */
+    // FileManagementController.java
+
+    // 彻底删除文件/文件夹
     @DeleteMapping("/recycle/bin")
     public ResponseEntity<Void> deletePermanently(
             @RequestBody DeleteRequest request,
-            @RequestAttribute("userId") Long userId
+            @RequestParam("userId") Long userId
     ) {
-        fileService.deletePermanently(request.getFileIds(), userId);
-        folderService.deletePermanently(request.getFolderIds(), userId);
-        return ResponseEntity.ok().build();
+        try {
+            // 校验参数
+            if (CollectionUtils.isEmpty(request.getFileIds()) && CollectionUtils.isEmpty(request.getFolderIds())) {
+                return ResponseEntity.badRequest().build();
+            }
+            // 执行彻底删除操作（传递 userId）
+            fileService.deletePermanently(request.getFileIds(), userId);
+            folderService.deletePermanently(request.getFolderIds(), userId);
+
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            log.error("彻底删除失败，参数错误：{}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("彻底删除失败，用户ID：{}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
@@ -222,23 +309,38 @@ public class FileManagementController {
      */
     @GetMapping("/recycle/bin")
     public ResponseEntity<RecycleBinResponse> getRecycleBinItems(
-            @RequestAttribute("userId") Long userId,
+            @RequestParam("userId") Long userId,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize
     ) {
-        RecycleBinResponse response = new RecycleBinResponse();
-        response.setFiles(fileService.getRecycleBinFiles(userId, page, pageSize));
-        response.setFolders(folderService.getRecycleBinFolders(userId, page, pageSize));
-        return ResponseEntity.ok(response);
-    }
+        try {
+            // 参数校验
+            if (page <= 0 || pageSize <= 0) {
+                return ResponseEntity.badRequest().build();
+            }
 
+            // 获取回收站内容
+            RecycleBinResponse response = new RecycleBinResponse();
+            response.setFiles(fileService.getRecycleBinFiles(userId, page, pageSize));
+            response.setFolders(folderService.getRecycleBinFolders(userId, page, pageSize));
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("获取回收站列表失败，用户ID：{}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
     // 回收站请求/响应类
     static class MoveToRecycleRequest {
         private List<Long> fileIds;
         private List<Long> folderIds;
+        private Long userId;
 
         public List<Long> getFileIds() {
             return fileIds;
+        }
+        public Long getUserId() {
+            return userId;
         }
 
         public List<Long> getFolderIds() {

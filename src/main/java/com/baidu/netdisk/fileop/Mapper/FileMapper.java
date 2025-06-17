@@ -8,8 +8,13 @@ import java.util.List;
 
 @Mapper
 public interface FileMapper {
+    // 1. 彻底删除文件（物理删除） - 保留 userId 参数用于权限校验
+    int deleteFile(
+            @Param("fileId") Long fileId,
+            @Param("userId") Long userId
+    );
 
-    // 1. 基础查询方法
+    // 2. 基础查询方法
     List<File> getFilesByFolderId(@Param("folderId") Long folderId);
 
     File getFileById(@Param("fileId") Long fileId);
@@ -19,27 +24,26 @@ public interface FileMapper {
             @Param("folderId") Long folderId
     );
 
-    // 2. 去重查询（MD5）
+    // 3. 去重查询（MD5）
     File getFileByMd5(@Param("fileMd5") String fileMd5);
 
-    // 3. 批量操作
+    // 4. 批量操作
     void insertFiles(@Param("files") List<File> files);
+    void insertFile(File file);
 
-    // 新增：更新文件信息（解决报错关键）
+    // 5. 更新文件信息
     void updateFile(File file);
 
-    // 4. 逻辑删除（状态更新）
-    void updateFileStatus(
-            @Param("id") Long id,
-            @Param("status") Integer status
+    // 6. 逻辑删除（状态更新） - 重命名方法避免冲突
+    void markFileAsDeleted(
+            @Param("fileId") Long fileId,
+            @Param("userId") Long userId,
+            @Param("isDeleted") Boolean isDeleted
     );
 
     void deleteFilesByFolderId(@Param("folderId") Long folderId);
 
-    // 5. 新增：彻底删除文件（物理删除）
-    void deleteFile(@Param("fileId") Long fileId);
-
-    // 6. 回收站相关（标记删除）
+    // 7. 回收站相关（标记删除）
     void updateToRecycle(
             @Param("fileIds") List<Long> fileIds,
             @Param("userId") Long userId
