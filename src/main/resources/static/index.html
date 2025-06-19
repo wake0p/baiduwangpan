@@ -1,6 +1,844 @@
-<html>
-<body>
-<h1>hello word!!!</h1>
-<p>this is a html page</p>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        neutral: {
+                            100: '#F2F3F5',
+                            200: '#E5E6EB',
+                            300: '#C9CDD4',
+                            400: '#86909C',
+                            500: '#4E5969',
+                            600: '#272E3B',
+                            700: '#1D2129',
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .table-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .hover-scale {
+                transition: transform 0.2s ease;
+            }
+            .hover-scale:hover {
+                transform: scale(1.02);
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 3px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-neutral-100 font-inter min-h-screen flex flex-col">
+<!-- 顶部导航栏 -->
+<header class="bg-white shadow-sm sticky top-0 z-10">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <i class="fa fa-cloud text-primary text-2xl"></i>
+            <h1 class="text-xl font-bold text-neutral-700">企业云盘</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <input type="text" placeholder="搜索文件..." class="py-2 pl-10 pr-4 rounded-full border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all-300 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400"></i>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="p-2 rounded-full hover:bg-neutral-100 transition-all-300 relative">
+                    <i class="fa fa-bell-o text-neutral-500"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                <div class="flex items-center space-x-2 cursor-pointer">
+                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <span class="font-medium">JD</span>
+                    </div>
+                    <span class="hidden md:inline-block text-sm font-medium text-neutral-700">John Doe</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 主内容区 -->
+<main class="flex-grow container mx-auto px-4 py-6">
+    <!-- 路径导航 -->
+    <div id="path" class="mb-6 flex items-center flex-wrap text-sm text-neutral-500">
+        <i class="fa fa-folder-open-o mr-2"></i>
+        <span class="flex items-center">
+                <a href="#" class="hover:text-primary transition-all-300 font-medium">全部文件</a>
+            </span>
+    </div>
+
+    <!-- 操作按钮区 -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+            <button id="upload-btn" class="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-all-300 shadow-sm">
+                <i class="fa fa-cloud-upload mr-2"></i>上传文件
+            </button>
+            <button id="new-folder-btn" class="flex items-center px-4 py-2 bg-white border border-neutral-200 text-neutral-700 rounded-md hover:bg-neutral-50 transition-all-300 shadow-sm">
+                <i class="fa fa-folder-o mr-2"></i>新建文件夹
+            </button>
+            <button id="delete-btn" class="flex items-center px-4 py-2 bg-white border border-neutral-200 text-neutral-700 rounded-md hover:bg-neutral-50 transition-all-300 shadow-sm" disabled>
+                <i class="fa fa-trash-o mr-2"></i>删除
+            </button>
+            <button id="share-btn" class="flex items-center px-4 py-2 bg-white border border-neutral-200 text-neutral-700 rounded-md hover:bg-neutral-50 transition-all-300 shadow-sm" disabled>
+                <i class="fa fa-share-alt mr-2"></i>分享
+            </button>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="grid-view-btn" class="p-2 rounded-md hover:bg-neutral-100 transition-all-300 text-primary">
+                <i class="fa fa-th-large"></i>
+            </button>
+            <button id="list-view-btn" class="p-2 rounded-md hover:bg-neutral-100 transition-all-300 text-neutral-400">
+                <i class="fa fa-list"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 文件表格 -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden table-shadow">
+        <div class="overflow-x-auto custom-scrollbar">
+            <table id="file-table" class="w-full">
+                <thead>
+                <tr class="bg-neutral-50 text-neutral-500 text-sm">
+                    <th class="px-4 py-3 text-left w-12">
+                        <input type="checkbox" id="select-all" class="rounded text-primary focus:ring-primary/30">
+                    </th>
+                    <th class="px-4 py-3 text-left font-medium">名称</th>
+                    <th class="px-4 py-3 text-left font-medium hidden md:table-cell">所有者</th>
+                    <th class="px-4 py-3 text-left font-medium">修改时间</th>
+                    <th class="px-4 py-3 text-left font-medium hidden md:table-cell">大小</th>
+                    <th class="px-4 py-3 text-left font-medium w-24">操作</th>
+                </tr>
+                </thead>
+                <tbody id="file-table-body" class="divide-y divide-neutral-100">
+                <!-- 文件和文件夹将通过JavaScript动态添加 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 空状态 -->
+    <div id="empty-state" class="hidden py-20 text-center">
+        <div class="flex flex-col items-center">
+            <div class="w-24 h-24 mb-4 text-neutral-300">
+                <i class="fa fa-folder-open-o text-6xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-neutral-700 mb-2">此文件夹为空</h3>
+            <p class="text-neutral-500 mb-6">上传文件或创建新文件夹开始管理你的内容</p>
+            <button id="empty-upload-btn" class="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-all-300 shadow-sm">
+                <i class="fa fa-cloud-upload mr-2"></i>上传文件
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- 页脚 -->
+<footer class="bg-white border-t border-neutral-200 py-4">
+    <div class="container mx-auto px-4 text-center text-neutral-500 text-sm">
+        <p>© 2023 企业云盘 - 安全、高效的文件管理解决方案</p>
+    </div>
+</footer>
+
+<!-- 新建文件夹模态框 -->
+<div id="new-folder-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0" id="new-folder-modal-content">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-neutral-700">新建文件夹</h3>
+                <button id="new-folder-close" class="text-neutral-400 hover:text-neutral-600 transition-all-300">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-4">
+                <label for="new-folder-name" class="block text-sm font-medium text-neutral-700 mb-1">文件夹名称</label>
+                <input type="text" id="new-folder-name" value="新建文件夹" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all-300">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button id="new-folder-cancel" class="px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-all-300">取消</button>
+                <button id="new-folder-confirm" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-all-300">创建</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 重命名模态框 -->
+<div id="rename-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0" id="rename-modal-content">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-neutral-700">重命名</h3>
+                <button id="rename-close" class="text-neutral-400 hover:text-neutral-600 transition-all-300">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-4">
+                <label for="rename-name" class="block text-sm font-medium text-neutral-700 mb-1">新名称</label>
+                <input type="text" id="rename-name" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all-300">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button id="rename-cancel" class="px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-all-300">取消</button>
+                <button id="rename-confirm" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-all-300">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分享模态框 -->
+<div id="share-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0" id="share-modal-content">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-neutral-700">分享文件</h3>
+                <button id="share-close" class="text-neutral-400 hover:text-neutral-600 transition-all-300">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-neutral-700 mb-3">通过链接分享</h4>
+                <div class="flex items-center border border-neutral-300 rounded-md overflow-hidden">
+                    <input type="text" id="share-link" value="https://cloud.example.com/s/abc123" readonly class="flex-grow px-3 py-2 bg-neutral-50 border-0 focus:outline-none">
+                    <button id="copy-link-btn" class="px-3 py-2 bg-primary text-white hover:bg-primary/90 transition-all-300">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                <div class="flex items-center mt-2 text-sm text-neutral-500">
+                    <input type="checkbox" id="link-expire" class="mr-2 rounded text-primary focus:ring-primary/30">
+                    <label for="link-expire">链接7天后过期</label>
+                </div>
+                <div class="flex items-center mt-2 text-sm text-neutral-500">
+                    <input type="checkbox" id="link-password" class="mr-2 rounded text-primary focus:ring-primary/30">
+                    <label for="link-password">需要密码访问</label>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-neutral-700 mb-3">通过邮件分享</h4>
+                <div class="flex flex-col space-y-2">
+                    <div class="flex items-center border border-neutral-300 rounded-md overflow-hidden">
+                        <input type="email" placeholder="输入邮箱地址" class="flex-grow px-3 py-2 border-0 focus:outline-none">
+                        <button class="px-3 py-2 bg-primary text-white hover:bg-primary/90 transition-all-300">
+                            <i class="fa fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="text-xs text-neutral-500">
+                        最多可分享给5个邮箱地址
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-neutral-700 mb-3">通过二维码分享</h4>
+                <div class="flex justify-center">
+                    <div class="w-40 h-40 bg-neutral-100 rounded-md flex items-center justify-center">
+                        <i class="fa fa-qrcode text-4xl text-neutral-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button id="share-cancel" class="px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-all-300">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 文件预览模态框 -->
+<div id="preview-modal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center hidden">
+    <div class="w-full max-w-5xl h-full max-h-screen mx-4 flex flex-col bg-white rounded-lg overflow-hidden">
+        <div class="p-4 border-b border-neutral-200 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i id="preview-icon" class="fa fa-file-text-o text-neutral-400"></i>
+                <span id="preview-filename" class="font-medium text-neutral-700"></span>
+            </div>
+            <button id="preview-close" class="text-neutral-400 hover:text-neutral-600 transition-all-300">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+        <div class="flex-grow overflow-hidden relative" id="preview-container">
+            <!-- 预览内容将通过JavaScript动态添加 -->
+            <div class="w-full h-full flex items-center justify-center">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 text-neutral-300">
+                        <i class="fa fa-file-o text-4xl"></i>
+                    </div>
+                    <p class="text-neutral-500">文件预览</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t border-neutral-200 flex items-center justify-between">
+            <div class="text-sm text-neutral-500">
+                <span id="preview-size"></span> ·
+                <span id="preview-modified"></span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="p-2 text-neutral-500 hover:text-neutral-700 transition-all-300">
+                    <i class="fa fa-download"></i>
+                </button>
+                <button class="p-2 text-neutral-500 hover:text-neutral-700 transition-all-300">
+                    <i class="fa fa-share-alt"></i>
+                </button>
+                <button class="p-2 text-neutral-500 hover:text-neutral-700 transition-all-300">
+                    <i class="fa fa-ellipsis-h"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const FileManager = {
+        state: {
+            currentPath: [],
+            currentFolderId: null,
+            selectedItems: [],
+            viewMode: 'list', // 'list' or 'grid'
+        },
+
+        init() {
+            this.loadFilesAndFolders(0); // 假设根目录ID为0
+            this.bindEvents();
+        },
+
+        bindEvents() {
+            // 新建文件夹按钮
+            $('#new-folder-btn').click(() => this.openModal('new-folder'));
+
+            // 上传文件按钮
+            $('#upload-btn, #empty-upload-btn').click(() => {
+                const input = $('<input type="file" multiple>');
+                input.on('change', (e) => {
+                    const files = e.target.files;
+                    if (files.length > 0) {
+                        this.uploadFiles(files);
+                    }
+                });
+                input.trigger('click');
+            });
+
+            // 模态框关闭按钮
+            $('#new-folder-close, #new-folder-cancel').click(() => this.closeModal('new-folder'));
+            $('#rename-close, #rename-cancel').click(() => this.closeModal('rename'));
+            $('#share-close, #share-cancel').click(() => this.closeModal('share'));
+            $('#preview-close').click(() => this.closeModal('preview'));
+
+            // 模态框确认按钮
+            $('#new-folder-confirm').click(() => this.createFolder());
+            $('#rename-confirm').click(() => this.renameItem());
+            $('#copy-link-btn').click(() => this.copyShareLink());
+
+            // 全选框事件
+            $('#select-all').change(() => this.toggleSelectAll());
+
+            // 视图切换
+            $('#grid-view-btn').click(() => this.changeViewMode('grid'));
+            $('#list-view-btn').click(() => this.changeViewMode('list'));
+
+            // 删除按钮
+            $('#delete-btn').click(() => this.deleteSelectedItems());
+
+            // 分享按钮
+            $('#share-btn').click(() => this.openModal('share'));
+        },
+
+        loadFilesAndFolders(folderId) {
+            this.state.currentFolderId = folderId;
+            this.state.selectedItems = [];
+
+            // 清空表格
+            $('#file-table-body').empty();
+
+            // 模拟加载文件和文件夹
+            setTimeout(() => {
+                const mockData = this.getMockData(folderId);
+
+                if (mockData.folders.length === 0 && mockData.files.length === 0) {
+                    $('#empty-state').removeClass('hidden');
+                    return;
+                }
+
+                $('#empty-state').addClass('hidden');
+
+                // 添加文件夹
+                mockData.folders.forEach(folder => {
+                    this.addRow(folder, true);
+                });
+
+                // 添加文件
+                mockData.files.forEach(file => {
+                    this.addRow(file, false);
+                });
+
+                this.updatePath();
+                this.updateButtonStates();
+            }, 500); // 模拟网络延迟
+        },
+
+        getMockData(folderId) {
+            // 模拟数据
+            const mockFolders = [
+                { id: 1, name: '文档', type: 'folder', owner: '张三', updateTime: '2023-06-01 14:30', size: null },
+                { id: 2, name: '图片', type: 'folder', owner: '李四', updateTime: '2023-06-02 09:15', size: null },
+                { id: 3, name: '视频', type: 'folder', owner: '王五', updateTime: '2023-06-03 16:45', size: null },
+            ];
+
+            const mockFiles = [
+                { id: 101, name: '需求文档.docx', type: 'file', owner: '张三', updateTime: '2023-06-01 15:20', size: 1284 },
+                { id: 102, name: '设计图.png', type: 'file', owner: '李四', updateTime: '2023-06-02 10:30', size: 4562 },
+                { id: 103, name: '演示视频.mp4', type: 'file', owner: '王五', updateTime: '2023-06-03 17:10', size: 124568 },
+                { id: 104, name: '会议记录.txt', type: 'file', owner: '赵六', updateTime: '2023-06-04 09:45', size: 256 },
+            ];
+
+            return {
+                folders: mockFolders,
+                files: mockFiles
+            };
+        },
+
+        addRow(item, isFolder) {
+            const row = $('<tr>').data('id', item.id).data('type', isFolder ? 'folder' : 'file');
+            row.addClass('hover:bg-neutral-50 transition-all-300 hover-scale');
+
+            // 复选框
+            const checkbox = $('<td class="px-4 py-3">').append(
+                $('<input type="checkbox" class="item-checkbox rounded text-primary focus:ring-primary/30">')
+                    .change(() => this.updateSelectedItems())
+            );
+
+            // 名称和图标
+            const icon = isFolder ? 'fa-folder-o text-primary' : this.getFileIcon(item.name);
+            const nameCell = $('<td class="px-4 py-3">').append(
+                $('<div class="flex items-center">').append(
+                    $('<i class="fa ' + icon + ' mr-3 w-5 text-center"></i>'),
+                    $('<span class="font-medium text-neutral-700">' + item.name + '</span>')
+                )
+            );
+
+            if (isFolder) {
+                nameCell.click(() => {
+                    this.state.currentPath.push({ name: item.name, id: item.id });
+                    this.loadFilesAndFolders(item.id);
+                });
+                nameCell.addClass('cursor-pointer hover:text-primary transition-all-300');
+            } else {
+                nameCell.click(() => this.previewFile(item));
+                nameCell.addClass('cursor-pointer');
+            }
+
+            // 所有者
+            const ownerCell = $('<td class="px-4 py-3 text-neutral-500 hidden md:table-cell">').text(item.owner);
+
+            // 修改时间
+            const date = new Date(item.updateTime);
+            const formattedDate = date.toLocaleString();
+            const timeCell = $('<td class="px-4 py-3 text-neutral-500">').text(formattedDate);
+
+            // 大小
+            const sizeCell = $('<td class="px-4 py-3 text-neutral-500 hidden md:table-cell">').text(
+                item.size ? this.formatFileSize(item.size) : '-'
+            );
+
+            // 操作
+            const actionsCell = $('<td class="px-4 py-3">').append(
+                $('<div class="flex items-center space-x-2">').append(
+                    $('<button class="p-1.5 text-neutral-400 hover:text-primary transition-all-300" title="预览">')
+                        .append(!isFolder ? $('<i class="fa fa-eye"></i>').click(() => this.previewFile(item)) : ''),
+                    $('<button class="p-1.5 text-neutral-400 hover:text-primary transition-all-300" title="下载">')
+                        .append(!isFolder ? $('<i class="fa fa-download"></i>').click(() => this.downloadFile(item)) : ''),
+                    $('<button class="p-1.5 text-neutral-400 hover:text-primary transition-all-300" title="分享">')
+                        .append($('<i class="fa fa-share-alt"></i>').click(() => {
+                            this.state.selectedItems = [item.id];
+                            this.openModal('share');
+                        })),
+                    $('<button class="p-1.5 text-neutral-400 hover:text-primary transition-all-300" title="更多">')
+                        .append($('<i class="fa fa-ellipsis-v"></i>'))
+                )
+            );
+
+            row.append(checkbox, nameCell, ownerCell, timeCell, sizeCell, actionsCell);
+            $('#file-table-body').append(row);
+        },
+
+        getFileIcon(fileName) {
+            const ext = fileName.split('.').pop().toLowerCase();
+
+            switch (ext) {
+                case 'pdf': return 'fa-file-pdf-o text-red-500';
+                case 'doc':
+                case 'docx': return 'fa-file-word-o text-blue-600';
+                case 'xls':
+                case 'xlsx': return 'fa-file-excel-o text-green-600';
+                case 'ppt':
+                case 'pptx': return 'fa-file-powerpoint-o text-yellow-500';
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                case 'gif': return 'fa-file-image-o text-purple-500';
+                case 'mp4':
+                case 'mov': return 'fa-file-video-o text-indigo-500';
+                case 'mp3':
+                case 'wav': return 'fa-file-audio-o text-pink-500';
+                case 'txt': return 'fa-file-text-o text-neutral-500';
+                default: return 'fa-file-o text-neutral-400';
+            }
+        },
+
+        formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        },
+
+        updatePath() {
+            const pathDiv = $('#path');
+            pathDiv.empty();
+
+            pathDiv.append('<i class="fa fa-folder-open-o mr-2 text-neutral-400"></i>');
+
+            this.state.currentPath.forEach((item, index) => {
+                const link = $('<a href="#" class="hover:text-primary transition-all-300">').text(item.name)
+                    .click(() => {
+                        const newPath = this.state.currentPath.slice(0, index + 1);
+                        this.state.currentPath = newPath;
+                        this.loadFilesAndFolders(item.id);
+                    });
+
+                pathDiv.append(link);
+
+                if (index < this.state.currentPath.length - 1) {
+                    pathDiv.append('<span class="mx-1 text-neutral-400">/</span>');
+                }
+            });
+        },
+
+        updateButtonStates() {
+            const selectedCount = this.state.selectedItems.length;
+
+            // 更新删除按钮状态
+            $('#delete-btn').prop('disabled', selectedCount === 0);
+
+            // 更新分享按钮状态
+            $('#share-btn').prop('disabled', selectedCount === 0);
+
+            // 更新重命名按钮状态
+            // 重命名功能在上下文菜单中，此处不需要更新按钮状态
+        },
+
+        toggleSelectAll() {
+            const isChecked = $('#select-all').is(':checked');
+            $('.item-checkbox').prop('checked', isChecked);
+
+            if (isChecked) {
+                this.state.selectedItems = $('.item-checkbox:checked').map((i, el) => {
+                    return $(el).closest('tr').data('id');
+                }).get();
+            } else {
+                this.state.selectedItems = [];
+            }
+
+            this.updateButtonStates();
+        },
+
+        updateSelectedItems() {
+            this.state.selectedItems = $('.item-checkbox:checked').map((i, el) => {
+                return $(el).closest('tr').data('id');
+            }).get();
+
+            // 更新全选框状态
+            const allChecked = $('.item-checkbox').length > 0 &&
+                $('.item-checkbox').length === $('.item-checkbox:checked').length;
+            $('#select-all').prop('checked', allChecked);
+
+            this.updateButtonStates();
+        },
+
+        changeViewMode(mode) {
+            this.state.viewMode = mode;
+
+            if (mode === 'grid') {
+                $('#grid-view-btn').addClass('text-primary').removeClass('text-neutral-400');
+                $('#list-view-btn').addClass('text-neutral-400').removeClass('text-primary');
+                // 这里可以实现网格视图的切换逻辑
+            } else {
+                $('#grid-view-btn').addClass('text-neutral-400').removeClass('text-primary');
+                $('#list-view-btn').addClass('text-primary').removeClass('text-neutral-400');
+                // 这里可以实现列表视图的切换逻辑
+            }
+        },
+
+        openModal(modalName) {
+            // 关闭所有模态框
+            $('.fixed').addClass('hidden');
+
+            // 重置模态框状态
+            $('.transform').removeClass('scale-95 opacity-0').addClass('scale-100 opacity-100');
+
+            // 打开指定模态框
+            $(`#${modalName}-modal`).removeClass('hidden');
+
+            // 特殊处理
+            if (modalName === 'rename') {
+                if (this.state.selectedItems.length === 1) {
+                    const itemId = this.state.selectedItems[0];
+                    const row = $(`tr[data-id="${itemId}"]`);
+                    const name = row.find('.font-medium').text();
+                    $('#rename-name').val(name);
+                }
+            }
+        },
+
+        closeModal(modalName) {
+            $(`#${modalName}-modal-content`).removeClass('scale-100 opacity-100').addClass('scale-95 opacity-0');
+
+            setTimeout(() => {
+                $(`#${modalName}-modal`).addClass('hidden');
+            }, 300);
+        },
+
+        createFolder() {
+            const folderName = $('#new-folder-name').val().trim();
+
+            if (!folderName) {
+                alert('文件夹名称不能为空');
+                return;
+            }
+
+            // 模拟创建文件夹
+            const newFolder = {
+                id: Date.now(), // 模拟ID
+                name: folderName,
+                type: 'folder',
+                owner: '你',
+                updateTime: new Date().toLocaleString(),
+                size: null
+            };
+
+            this.addRow(newFolder, true);
+            this.closeModal('new-folder');
+            $('#empty-state').addClass('hidden');
+
+            // 显示成功提示
+            this.showNotification('文件夹创建成功', 'success');
+        },
+
+        renameItem() {
+            if (this.state.selectedItems.length !== 1) return;
+
+            const itemId = this.state.selectedItems[0];
+            const newName = $('#rename-name').val().trim();
+
+            if (!newName) {
+                alert('名称不能为空');
+                return;
+            }
+
+            // 模拟重命名
+            const row = $(`tr[data-id="${itemId}"]`);
+            row.find('.font-medium').text(newName);
+
+            this.closeModal('rename');
+            this.showNotification('重命名成功', 'success');
+        },
+
+        deleteSelectedItems() {
+            if (this.state.selectedItems.length === 0) return;
+
+            if (confirm(`确定要删除选中的 ${this.state.selectedItems.length} 个项目吗？`)) {
+                // 模拟删除
+                this.state.selectedItems.forEach(id => {
+                    $(`tr[data-id="${id}"]`).remove();
+                });
+
+                this.state.selectedItems = [];
+                this.updateButtonStates();
+
+                // 如果表格为空，显示空状态
+                if ($('#file-table-body tr').length === 0) {
+                    $('#empty-state').removeClass('hidden');
+                }
+
+                this.showNotification('删除成功', 'success');
+            }
+        },
+
+        uploadFiles(files) {
+            // 模拟文件上传
+            const fileList = Array.from(files);
+
+            fileList.forEach(file => {
+                const newFile = {
+                    id: Date.now(), // 模拟ID
+                    name: file.name,
+                    type: 'file',
+                    owner: '你',
+                    updateTime: new Date().toLocaleString(),
+                    size: file.size
+                };
+
+                this.addRow(newFile, false);
+            });
+
+            $('#empty-state').addClass('hidden');
+            this.showNotification(`成功上传 ${fileList.length} 个文件`, 'success');
+        },
+
+        previewFile(item) {
+            // 模拟预览文件
+            $('#preview-filename').text(item.name);
+            $('#preview-icon').attr('class', 'fa ' + this.getFileIcon(item.name) + ' mr-2');
+            $('#preview-size').text(this.formatFileSize(item.size));
+            $('#preview-modified').text(item.updateTime);
+
+            // 根据文件类型设置预览内容
+            const previewContainer = $('#preview-container');
+            previewContainer.empty();
+
+            const fileExt = item.name.split('.').pop().toLowerCase();
+
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExt)) {
+                // 图片预览
+                previewContainer.append(`
+                        <img src="https://picsum.photos/800/600?random=${item.id}" alt="预览图片"
+                             class="max-w-full max-h-full object-contain mx-auto">
+                    `);
+            } else if (['pdf'].includes(fileExt)) {
+                // PDF预览
+                previewContainer.append(`
+                        <iframe src="https://docs.google.com/gview?url=http://infolab.stanford.edu/pub/papers/google.pdf&embedded=true"
+                                width="100%" height="100%" frameborder="0"></iframe>
+                    `);
+            } else if (['txt'].includes(fileExt)) {
+                // 文本预览
+                previewContainer.append(`
+                        <div class="w-full h-full p-4 bg-neutral-50 overflow-auto custom-scrollbar">
+                            <pre class="font-mono text-sm">这是一个文本文件示例。\n\n实际应用中，这里会显示文件的实际内容。</pre>
+                        </div>
+                    `);
+            } else {
+                // 不支持的文件类型
+                previewContainer.append(`
+                        <div class="w-full h-full flex items-center justify-center">
+                            <div class="text-center">
+                                <div class="w-16 h-16 mx-auto mb-4 text-neutral-300">
+                                    <i class="fa fa-file-o text-4xl"></i>
+                                </div>
+                                <p class="text-neutral-500">不支持预览此文件类型</p>
+                            </div>
+                        </div>
+                    `);
+            }
+
+            this.openModal('preview');
+        },
+
+        downloadFile(item) {
+            // 模拟下载文件
+            this.showNotification(`开始下载 ${item.name}`, 'info');
+
+            // 创建一个临时链接来触发下载
+            const link = document.createElement('a');
+            link.href = 'https://picsum.photos/800/600?random=' + item.id;
+            link.download = item.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+
+        copyShareLink() {
+            const shareLink = $('#share-link');
+            shareLink.select();
+            document.execCommand('copy');
+
+            this.showNotification('链接已复制到剪贴板', 'success');
+        },
+
+        showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = $('<div>').addClass(
+                'fixed bottom-4 right-4 px-4 py-3 rounded-md shadow-lg z-50 transition-all duration-300 transform translate-y-20 opacity-0'
+            );
+
+            // 根据类型设置样式
+            if (type === 'success') {
+                notification.addClass('bg-green-50 border border-green-200 text-green-700');
+                notification.append('<i class="fa fa-check-circle mr-2"></i>');
+            } else if (type === 'error') {
+                notification.addClass('bg-red-50 border border-red-200 text-red-700');
+                notification.append('<i class="fa fa-exclamation-circle mr-2"></i>');
+            } else {
+                notification.addClass('bg-blue-50 border border-blue-200 text-blue-700');
+                notification.append('<i class="fa fa-info-circle mr-2"></i>');
+            }
+
+            // 添加消息
+            notification.append(message);
+
+            // 添加到页面
+            $('body').append(notification);
+
+            // 显示通知
+            setTimeout(() => {
+                notification.removeClass('translate-y-20 opacity-0');
+            }, 10);
+
+            // 3秒后隐藏
+            setTimeout(() => {
+                notification.addClass('translate-y-20 opacity-0');
+
+                // 完全隐藏后移除元素
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+    };
+
+    // 初始化文件管理器
+    $(document).ready(() => {
+        FileManager.init();
+    });
+</script>
 </body>
+
 </html>

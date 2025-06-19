@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netdisk.fileop.Mapper.ShareMapper">
+
+    <insert id="insertShare" parameterType="com.baidu.netdisk.entity.Share"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into share (file_id, user_id, share_code, share_type, expire_time, status, create_time, update_time)
+        values (#{fileId}, #{userId}, #{shareCode}, #{shareType}, #{expireTime}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+
+    <select id="getSharesByFileId" resultType="com.baidu.netdisk.entity.Share">
+        select * from share where file_id = #{fileId}
+    </select>
+
+    <select id="getShareById" resultType="com.baidu.netdisk.entity.Share">
+        select * from share where id = #{id}
+    </select>
+
+    <delete id="deleteShare">
+        delete from share where id = #{id}
+    </delete>
+
+    <update id="updateShareStatus">
+        update share set status = #{status} where id = #{id}
+    </update>
+</mapper>

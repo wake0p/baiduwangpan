@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netdisk.fileop.Mapper.FileMapper">
+    <resultMap id="FileResultMap" type="com.baidu.netdisk.entity.File">
+        <id property="id" column="id" />
+        <result property="fileName" column="file_name" />
+        <result property="fileType" column="file_type" />
+        <result property="fileSize" column="file_size" />
+        <result property="filePath" column="file_path" />
+        <result property="fileMd5" column="file_md5" />
+        <result property="folderId" column="folder_id" />
+        <result property="userId" column="user_id" />
+        <result property="status" column="status" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedTime" column="deleted_time" />
+        <result property="deletedBy" column="deleted_by" />
+    </resultMap>
+
+    <!-- ===================== 基础查询 ===================== -->
+    <select id="getFilesByFolderId" resultMap="FileResultMap">
+        SELECT * FROM file
+        WHERE folder_id = #{folderId}
+          AND status = true
+          AND is_deleted = false
+    </select>
+
+    <select id="getFileById" resultMap="FileResultMap">
+        SELECT * FROM file
+        WHERE id = #{fileId}
+          AND status = true
+    </select>
+
+    <select id="getFileByNameAndFolderId" resultMap="FileResultMap">
+        SELECT * FROM file
+        WHERE file_name = #{fileName}
+          AND folder_id = #{folderId}
+          AND status = true
+          AND is_deleted = false
+    </select>
+
+    <!-- ===================== 增删改操作 ===================== -->
+    <update id="updateFile">
+        UPDATE file
+        SET file_name = #{fileName},
+            file_type = #{fileType},
+            file_size = #{fileSize},
+            file_path = #{filePath},
+            file_md5 = #{fileMd5},
+            folder_id = #{folderId},
+            user_id = #{userId},
+            status = #{status},
+            is_deleted = #{isDeleted},
+            deleted_time = #{deletedTime},
+            deleted_by = #{deletedBy},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="getFileByMd5" resultMap="FileResultMap">
+        SELECT * FROM file
+        WHERE file_md5 = #{fileMd5}
+    </select>
+
+    <insert id="insertFiles" parameterType="java.util.List">
+        INSERT INTO file (file_name, folder_id, file_size, file_type, file_md5, create_time, status)
+        VALUES
+        <foreach collection="files" item="file" separator=",">
+            (#{file.fileName}, #{file.folderId}, #{file.fileSize}, #{file.fileType}, #{file.fileMd5}, #{file.createTime}, #{file.status})
+        </foreach>
+    </insert>
+
+    <insert id="insertFile" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO file (
+            file_name, folder_id, file_size, file_type, file_md5,
+            create_time, status, user_id, file_path
+        )
+        VALUES (
+                   #{fileName}, #{folderId}, #{fileSize}, #{fileType}, #{fileMd5},
+                   #{createTime}, #{status}, #{userId}, #{filePath}
+               )
+    </insert>
+
+    <!-- ===================== 逻辑删除操作 ===================== -->
+    <update id="updateFileStatus">
+        UPDATE file
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 修改为逻辑删除（标记为已删除） -->
+    <update id="deleteFilesByFolderId">
+        UPDATE file
+        SET is_deleted = true,
+        deleted_time = NOW(),
+        update_time = NOW()
+        WHERE folder_id = #{folderId}
+        AND user_id = #{userId}  <!-- 新增权限校验 -->
+    </update>
+
+    <!-- 1. 移入回收站 -->
+    <update id="updateToRecycle">
+        <if test="fileIds != null and fileIds.size() > 0">
+            UPDATE file
+            SET is_deleted = true,
+            deleted_time = NOW(),
+            deleted_by = #{userId},
+            update_time = NOW()
+            WHERE id IN
+            <foreach collection="fileIds" item="fileId" open="(" separator="," close=")">
+                #{fileId}
+            </foreach>
+            AND user_id = #{userId}
+            AND is_deleted = false
+        </if>
+    </update>
+
+    <!-- 2. 从回收站恢复文件 -->
+    <update id="restoreFromRecycle">
+        <if test="fileIds != null and fileIds.size() > 0">
+            UPDATE file
+            SET is_deleted = false,
+            deleted_time = NULL,
+            deleted_by = NULL,
+            update_time = NOW()
+            WHERE id IN
+            <foreach collection="fileIds" item="fileId" open="(" separator="," close=")">
+                #{fileId}
+            </foreach>
+            AND user_id = #{userId}
+            AND is_deleted = true
+        </if>
+    </update>
+
+    <!-- 3. 彻底删除文件（物理删除） -->
+    <delete id="deleteFile">
+        DELETE FROM file
+        WHERE id = #{fileId}
+          AND user_id = #{userId}
+          AND is_deleted = true
+          AND deleted_by = #{userId}
+    </delete>
+
+    <!-- 4. 分页查询回收站文件 -->
+    <select id="getRecycleBinFiles" resultMap="FileResultMap">
+        SELECT
+            id, file_name, file_type, file_size,
+            file_path, file_md5, folder_id, user_id,
+            status, create_time, update_time,
+            is_deleted, deleted_time, deleted_by
+        FROM file
+        WHERE user_id = #{userId}
+          AND is_deleted = true
+        ORDER BY deleted_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 5. 统计回收站文件总数 -->
+    <select id="getRecycleBinFileCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM file
+        WHERE user_id = #{userId}
+          AND is_deleted = true
+    </select>
+
+</mapper>
