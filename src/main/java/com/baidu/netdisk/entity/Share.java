@@ -1,4 +1,4 @@
-package com.baidu.netdisk.preview.entity;
+package com.baidu.netdisk.entity;
 
 import lombok.Data;
 import javax.persistence.Entity;

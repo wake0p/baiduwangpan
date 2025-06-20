@@ -1,6 +1,6 @@
 package com.baidu.netdisk.preview.service.impl;
 
-import com.baidu.netdisk.preview.entity.User;
+import com.baidu.netdisk.entity.User;
 import com.baidu.netdisk.preview.repository.UserRepository;
 import com.baidu.netdisk.preview.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;

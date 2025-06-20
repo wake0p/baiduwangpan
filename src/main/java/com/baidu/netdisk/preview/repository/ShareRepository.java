@@ -1,6 +1,6 @@
 package com.baidu.netdisk.preview.repository;
 
-import com.baidu.netdisk.preview.entity.Share;
+import com.baidu.netdisk.entity.Share;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

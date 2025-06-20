@@ -1,6 +1,6 @@
 package com.baidu.netdisk.preview.repository;
 
-import com.baidu.netdisk.preview.entity.User;
+import com.baidu.netdisk.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

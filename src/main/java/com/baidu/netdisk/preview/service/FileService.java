@@ -1,6 +1,6 @@
 package com.baidu.netdisk.preview.service;
 
-import com.baidu.netdisk.preview.entity.NetdiskFile;
+import com.baidu.netdisk.entity.NetdiskFile;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
