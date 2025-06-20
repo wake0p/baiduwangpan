@@ -6,8 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "file")
-public class NetdiskFile {
+public class File {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,7 +17,6 @@ public class NetdiskFile {
     private String fileMd5;         // 文件MD5值
     private Long folderId;          // 所属文件夹ID
     private Long userId;            // 上传用户ID
-    private Integer status;         // 状态：0-删除，1-正常
     private Boolean isFavorite;     // 是否收藏：true-收藏，false-未收藏
     
     @Column(nullable = false, updatable = false)

@@ -1,6 +1,6 @@
 package com.baidu.netdisk.preview.controller;
 
-import com.baidu.netdisk.preview.entity.NetdiskFile;
+import com.baidu.netdisk.preview.entity.File;
 import com.baidu.netdisk.preview.entity.Share;
 import com.baidu.netdisk.preview.service.FileService;
 import com.baidu.netdisk.preview.service.ShareService;
@@ -29,7 +29,7 @@ public class FileController {
     private ShareService shareService;
 
     @GetMapping("/category/{userId}/{fileType}")
-    public List<NetdiskFile> getFilesByCategory(
+    public List<File> getFilesByCategory(
             @PathVariable Long userId,
             @PathVariable String fileType,
             @RequestParam(defaultValue = "0") int page,
@@ -44,7 +44,7 @@ public class FileController {
 
     @GetMapping("/download/{fileId}")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) {
-        NetdiskFile file = fileService.getFileById(fileId);
+        File file = fileService.getFileById(fileId);
         if (file == null) {
             return ResponseEntity.notFound().build();
         }
@@ -68,7 +68,7 @@ public class FileController {
 
     @GetMapping("/preview/{fileId}")
     public ResponseEntity<Resource> previewFile(@PathVariable Long fileId) {
-        NetdiskFile file = fileService.getFileById(fileId);
+        File file = fileService.getFileById(fileId);
         if (file == null) {
             return ResponseEntity.notFound().build();
         }
@@ -106,7 +106,7 @@ public class FileController {
     }
 
     @GetMapping("/favorites/{userId}")
-    public List<NetdiskFile> getFavoriteFiles(
+    public List<File> getFavoriteFiles(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size) {
@@ -115,7 +115,7 @@ public class FileController {
     }
 
     @GetMapping("/search/{userId}")
-    public List<NetdiskFile> searchFiles(
+    public List<File> searchFiles(
             @PathVariable Long userId,
             @RequestParam String fileName,
             @RequestParam(defaultValue = "0") int page,
