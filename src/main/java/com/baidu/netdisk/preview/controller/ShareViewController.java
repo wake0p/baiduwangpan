@@ -1,4 +1,4 @@
-package com.baidu.netdisk.controller;
+package com.baidu.netdisk.preview.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

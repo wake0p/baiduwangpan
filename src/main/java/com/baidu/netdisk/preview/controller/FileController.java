@@ -1,9 +1,9 @@
-package com.baidu.netdisk.controller;
+package com.baidu.netdisk.preview.controller;
 
-import com.baidu.netdisk.entity.NetdiskFile;
-import com.baidu.netdisk.entity.Share;
-import com.baidu.netdisk.service.FileService;
-import com.baidu.netdisk.service.ShareService;
+import com.baidu.netdisk.preview.entity.NetdiskFile;
+import com.baidu.netdisk.preview.entity.Share;
+import com.baidu.netdisk.preview.service.FileService;
+import com.baidu.netdisk.preview.service.ShareService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;

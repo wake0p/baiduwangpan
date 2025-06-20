@@ -1,4 +1,4 @@
-package com.baidu.netdisk.config;
+package com.baidu.netdisk.preview.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

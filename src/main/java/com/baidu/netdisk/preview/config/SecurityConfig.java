@@ -1,4 +1,4 @@
-package com.baidu.netdisk.config;
+package com.baidu.netdisk.preview.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

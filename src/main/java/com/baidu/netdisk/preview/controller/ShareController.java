@@ -1,7 +1,7 @@
-package com.baidu.netdisk.controller;
+package com.baidu.netdisk.preview.controller;
 
-import com.baidu.netdisk.entity.Share;
-import com.baidu.netdisk.service.ShareService;
+import com.baidu.netdisk.preview.entity.Share;
+import com.baidu.netdisk.preview.service.ShareService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

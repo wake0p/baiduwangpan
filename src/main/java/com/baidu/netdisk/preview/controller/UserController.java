@@ -1,7 +1,7 @@
-package com.baidu.netdisk.controller;
+package com.baidu.netdisk.preview.controller;
 
-import com.baidu.netdisk.entity.User;
-import com.baidu.netdisk.service.UserService;
+import com.baidu.netdisk.preview.entity.User;
+import com.baidu.netdisk.preview.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

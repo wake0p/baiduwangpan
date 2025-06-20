@@ -1,8 +1,8 @@
-package com.baidu.netdisk.service.impl;
+package com.baidu.netdisk.preview.service.impl;
 
-import com.baidu.netdisk.entity.NetdiskFile;
-import com.baidu.netdisk.repository.FileRepository;
-import com.baidu.netdisk.service.FileService;
+import com.baidu.netdisk.preview.entity.NetdiskFile;
+import com.baidu.netdisk.preview.repository.FileRepository;
+import com.baidu.netdisk.preview.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;

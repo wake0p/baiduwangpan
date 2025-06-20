@@ -1,10 +1,10 @@
-package com.baidu.netdisk.service.impl;
+package com.baidu.netdisk.preview.service.impl;
 
-import com.baidu.netdisk.entity.NetdiskFile;
-import com.baidu.netdisk.entity.Share;
-import com.baidu.netdisk.repository.FileRepository;
-import com.baidu.netdisk.repository.ShareRepository;
-import com.baidu.netdisk.service.ShareService;
+import com.baidu.netdisk.preview.entity.NetdiskFile;
+import com.baidu.netdisk.preview.entity.Share;
+import com.baidu.netdisk.preview.repository.FileRepository;
+import com.baidu.netdisk.preview.repository.ShareRepository;
+import com.baidu.netdisk.preview.service.ShareService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

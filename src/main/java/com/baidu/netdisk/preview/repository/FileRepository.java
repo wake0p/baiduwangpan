@@ -1,6 +1,6 @@
-package com.baidu.netdisk.repository;
+package com.baidu.netdisk.preview.repository;
 
-import com.baidu.netdisk.entity.NetdiskFile;
+import com.baidu.netdisk.preview.entity.NetdiskFile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Pageable;

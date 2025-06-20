@@ -1,8 +1,8 @@
-package com.baidu.netdisk.service.impl;
+package com.baidu.netdisk.preview.service.impl;
 
-import com.baidu.netdisk.entity.User;
-import com.baidu.netdisk.repository.UserRepository;
-import com.baidu.netdisk.service.UserService;
+import com.baidu.netdisk.preview.entity.User;
+import com.baidu.netdisk.preview.repository.UserRepository;
+import com.baidu.netdisk.preview.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;

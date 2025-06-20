@@ -1,6 +1,6 @@
-package com.baidu.netdisk.service;
+package com.baidu.netdisk.preview.service;
 
-import com.baidu.netdisk.entity.User;
+import com.baidu.netdisk.preview.entity.User;
 
 public interface UserService {
     User getUserById(Long userId);
