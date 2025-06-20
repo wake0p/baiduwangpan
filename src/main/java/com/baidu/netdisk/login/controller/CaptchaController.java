@@ -1,4 +1,4 @@
-package com.baidu.netdisk.login.config.controller;
+package com.baidu.netdisk.login.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
