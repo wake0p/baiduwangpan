@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/baiduwangpan/Netdisk.iml" filepath="$PROJECT_DIR$/baiduwangpan/Netdisk.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/home.iml" filepath="$PROJECT_DIR$/.idea/home.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Netdisk.iml" filepath="$PROJECT_DIR$/Netdisk.iml" />
     </modules>
   </component>
 </project>

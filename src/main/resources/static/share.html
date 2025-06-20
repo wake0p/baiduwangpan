@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>百度网盘 - 分享文件</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .header img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+        .file-info {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .file-name {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .file-meta {
+            color: #666;
+            font-size: 14px;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .primary {
+            background-color: #4285f4;
+            color: white;
+        }
+        .secondary {
+            background-color: #f1f1f1;
+            color: #333;
+        }
+        .expired {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 4px;
+            text-align: center;
+            color: #d32f2f;
+        }
+        .preview-container {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .preview-image, .preview-video {
+            max-width: 100%;
+            max-height: 400px;
+        }
+        .preview-document {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://ss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=2848335166,4090823233&fm=26&gp=0.jpg" alt="Logo">
+            <h1>百度网盘 - 分享文件</h1>
+        </div>
+        
+        <div id="shareContent">
+            <!-- 内容将通过JavaScript加载 -->
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从URL获取分享码
+            const shareCode = window.location.pathname.split('/').pop();
+            
+            // 如果没有分享码，显示错误信息
+            if (!shareCode) {
+                showError('无效的分享链接');
+                return;
+            }
+            
+            // 加载分享信息
+            fetch(`/api/shares/code/${shareCode}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('分享不存在或已失效');
+                    }
+                    return response.json();
+                })
+                .then(share => {
+                    // 检查分享是否过期
+                    const expireTime = new Date(share.expireTime);
+                    const now = new Date();
+                    
+                    if (now > expireTime || share.status !== 1) {
+                        showExpired();
+                        return;
+                    }
+                    
+                    // 显示分享信息
+                    showShareInfo(share);
+                    
+                    // 加载文件详情
+                    return fetch(`/api/shares/${share.id}/detail`);
+                })
+                .then(response => {
+                    if (!response || !response.ok) {
+                        throw new Error('无法加载文件详情');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 如果成功加载了文件详情，添加预览功能
+                    if (data && data.file) {
+                        addPreviewSection(data.file, data.share.id);
+                    }
+                })
+                .catch(error => {
+                    showError(error.message);
+                });
+        });
+        
+        function showError(message) {
+            document.getElementById('shareContent').innerHTML = `
+                <div class="expired">
+                    <h2>出错了</h2>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        function showExpired() {
+            document.getElementById('shareContent').innerHTML = `
+                <div class="expired">
+                    <h2>分享已失效</h2>
+                    <p>该分享链接已过期或被取消</p>
+                </div>
+            `;
+        }
+        
+        function showShareInfo(share) {
+            const createTime = new Date(share.createTime).toLocaleString();
+            const expireTime = new Date(share.expireTime).toLocaleString();
+            
+            document.getElementById('shareContent').innerHTML = `
+                <div class="file-info">
+                    <div class="file-name">${share.fileName}</div>
+                    <div class="file-meta">
+                        <p>分享时间: ${createTime}</p>
+                        <p>过期时间: ${expireTime}</p>
+                        <p>分享码: ${share.shareCode}</p>
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="button primary" id="downloadButton">下载文件</button>
+                    <button class="button secondary" id="previewButton">在线预览</button>
+                </div>
+                <div id="previewSection"></div>
+            `;
+            
+            // 下载按钮点击事件
+            document.getElementById('downloadButton').addEventListener('click', function() {
+                // 记录下载次数
+                fetch(`/api/shares/${share.id}/download`, { method: 'POST' })
+                    .then(() => {
+                        window.open(`/api/files/download/${share.fileId}`, '_blank');
+                    });
+            });
+            
+            // 预览按钮点击事件
+            document.getElementById('previewButton').addEventListener('click', function() {
+                const previewSection = document.getElementById('previewSection');
+                if (previewSection.style.display === 'none' || previewSection.innerHTML === '') {
+                    showPreview(share.fileId);
+                } else {
+                    previewSection.style.display = 'none';
+                }
+            });
+        }
+        
+        function addPreviewSection(file, shareId) {
+            const previewSection = document.getElementById('previewSection');
+            if (!previewSection) return;
+            
+            previewSection.style.display = 'none';
+        }
+        
+        function showPreview(fileId) {
+            const previewSection = document.getElementById('previewSection');
+            previewSection.innerHTML = '<div class="preview-container">加载预览中...</div>';
+            previewSection.style.display = 'block';
+            
+            // 获取文件详细信息
+            fetch(`/api/files/preview/${fileId}`)
+                .then(response => {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType.includes('image')) {
+                        return response.blob().then(blob => {
+                            const imageUrl = URL.createObjectURL(blob);
+                            previewSection.innerHTML = `
+                                <div class="preview-container">
+                                    <img class="preview-image" src="${imageUrl}" alt="预览图片">
+                                </div>
+                            `;
+                        });
+                    } else if (contentType.includes('video')) {
+                        return response.blob().then(blob => {
+                            const videoUrl = URL.createObjectURL(blob);
+                            previewSection.innerHTML = `
+                                <div class="preview-container">
+                                    <video class="preview-video" controls>
+                                        <source src="${videoUrl}" type="${contentType}">
+                                        您的浏览器不支持视频标签。
+                                    </video>
+                                </div>
+                            `;
+                        });
+                    } else if (contentType.includes('audio')) {
+                        return response.blob().then(blob => {
+                            const audioUrl = URL.createObjectURL(blob);
+                            previewSection.innerHTML = `
+                                <div class="preview-container">
+                                    <audio controls style="width: 100%;">
+                                        <source src="${audioUrl}" type="${contentType}">
+                                        您的浏览器不支持音频标签。
+                                    </audio>
+                                </div>
+                            `;
+                        });
+                    } else if (contentType.includes('pdf') || contentType.includes('text')) {
+                        previewSection.innerHTML = `
+                            <div class="preview-container">
+                                <iframe class="preview-document" src="/api/files/preview/${fileId}"></iframe>
+                            </div>
+                        `;
+                    } else {
+                        previewSection.innerHTML = `
+                            <div class="preview-container">
+                                <p>该文件类型不支持在线预览，请下载后查看。</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    previewSection.innerHTML = `
+                        <div class="preview-container">
+                            <p>预览失败: ${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+    </script>
+</body>
+</html> 

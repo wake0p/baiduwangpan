@@ -1,26 +1,36 @@
 package com.baidu.netdisk.entity;
 
 import lombok.Data;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
+
 @Data
 @Entity
+@Table(name = "user")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(unique = true, nullable = false)
     private String username;
+    
     private String password;
+    
+    @Column(unique = true)
     private String email;
+    
+    @Column(unique = true)
     private String phone;
+    
     private String avatar;
     private Long totalSpace;    // 总存储空间（字节）
     private Long usedSpace;     // 已使用空间（字节）
     private Integer status;     // 状态：0-禁用，1-正常
+    
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createTime;
+    
     private LocalDateTime updateTime;
     private String employeeId;  // 工号
     private String department;  // 部门

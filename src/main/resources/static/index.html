@@ -1,6 +1,496 @@
 <html>
 <body>
-<h1>hello word!!!</h1>
-<p>this is a html page</p>
-</body>
+    <h1>云盘使用情况</h1>
+    <div id="spaceInfo" style="position: fixed; bottom: 20px; left: 20px; background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 300px;">
+        <h3 style="margin: 0 0 10px 0; color: #333;">存储空间</h3>
+        <p style="margin: 5px 0; color: #666;">总空间: <span id="totalSpace" style="color: #333; font-weight: bold;"></span></p>
+        <p style="margin: 5px 0; color: #666;">已用空间: <span id="usedSpace" style="color: #333; font-weight: bold;"></span></p>
+        <div style="width: 100%; height: 8px; background-color: #f3f3f3; border-radius: 4px; margin-top: 10px; overflow: hidden;">
+            <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease;"></div>
+        </div>
+        <p style="margin: 5px 0; text-align: right; color: #666; font-size: 12px;"><span id="usagePercentage">0%</span></p>
+    </div>
+
+    <script>
+        // 假设用户ID为1，实际应用中应从登录信息中获取
+        const userId = 1;
+
+        fetch(`/api/users/${userId}/space-info`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const totalSpaceGB = (data.totalSpace / (1024 * 1024 * 1024)).toFixed(2);
+                const usedSpaceGB = (data.usedSpace / (1024 * 1024 * 1024)).toFixed(2);
+                const usagePercentage = (data.usedSpace / data.totalSpace) * 100;
+
+                document.getElementById('totalSpace').innerText = `${totalSpaceGB} GB`;
+                document.getElementById('usedSpace').innerText = `${usedSpaceGB} GB`;
+                document.getElementById('progressBar').style.width = `${usagePercentage}%`;
+                document.getElementById('usagePercentage').innerText = `${usagePercentage.toFixed(2)}%`;
+            })
+            .catch(error => {
+                console.error('Error fetching space info:', error);
+                document.getElementById('spaceInfo').innerText = '无法加载云盘使用情况。';
+            });
+
+        document.getElementById('settingsButton').addEventListener('click', () => {
+            document.getElementById('personalSettings').style.display = 'block';
+            document.getElementById('fileManagement').style.display = 'none';
+            document.getElementById('shareManagement').style.display = 'none';
+        });
+    </script>
+
+    <div style="display: flex; margin-bottom: 20px;">
+        <button id="settingsButton">个人设置</button>
+        <button id="fileButton" style="margin-left: 10px;">个人文件</button>
+        <button id="shareButton" style="margin-left: 10px;">我的分享</button>
+    </div>
+
+        <div id="personalSettings" style="display:none;">
+            <h2>个人信息</h2>
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <img id="userAvatar" src="https://via.placeholder.com/100/CCCCCC/FFFFFF?text=Default" alt="用户头像" style="width: 100px; height: 100px; border-radius: 50%; margin-right: 20px;">
+                <button id="changeAvatarButton">修改图像</button>
+            </div>
+            <p>账号: <span id="usernameDisplay"></span></p>
+            <p>工号: <span id="employeeIdDisplay"></span></p>
+            <p>部门: <span id="departmentDisplay"></span></p>
+            <p>职位: <span id="positionDisplay"></span></p>
+            <p>公司邮箱: <span id="companyEmailDisplay"></span></p>
+            <p>电话: <span id="phoneDisplay"></span> <button id="changePhoneButton">修改</button></p>
+            <button id="changePasswordButton">修改密码</button>
+
+            <!-- 修改密码弹窗 -->
+            <div id="passwordModal" style="display:none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; z-index: 100;">
+                <h3>修改密码</h3>
+                <p>旧密码: <input type="password" id="oldPassword"/></p>
+                <p>新密码: <input type="password" id="newPassword"/></p>
+                <p>确认密码: <input type="password" id="confirmPassword"/></p>
+                <button id="savePasswordButton">保存</button>
+                <button id="cancelPasswordButton">取消</button>
+            </div>
+
+            <!-- 修改图像弹窗 -->
+            <div id="avatarModal" style="display:none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; z-index: 100;">
+                <h3>选择图像</h3>
+                <div id="avatarOptions" style="display: flex; flex-wrap: wrap;">
+                    <img src="https://via.placeholder.com/50/FF0000/FFFFFF?text=M1" data-avatar-id="m1" style="width: 50px; height: 50px; margin: 5px; cursor: pointer;"/>
+                    <img src="https://via.placeholder.com/50/00FF00/FFFFFF?text=M2" data-avatar-id="m2" style="width: 50px; height: 50px; margin: 5px; cursor: pointer;"/>
+                    <img src="https://via.placeholder.com/50/0000FF/FFFFFF?text=M3" data-avatar-id="m3" style="width: 50px; height: 50px; margin: 5px; cursor: pointer;"/>
+                    <img src="https://via.placeholder.com/50/FFFF00/FFFFFF?text=M4" data-avatar-id="m4" style="width: 50px; height: 50px; margin: 5px; cursor: pointer;"/>
+                    <img src="https://via.placeholder.com/50/FF00FF/FFFFFF?text=F1" data-avatar-id="f1" style="width: 50px; height: 50px; margin: 5px; cursor: pointer;"/>
+                    <img src="https://via.placeholder.com/50/00FFFF/FFFFFF?text=F2" data-avatar-id="f2" style="width: 50px; height: 50px; margin: 5px; cursor: pointer;"/>
+                    <img src="https://via.placeholder.com/50/FFA500/FFFFFF?text=F3" data-avatar-id="f3" style="width: 50px; height: 50px; margin: 5px; cursor: pointer;"/>
+                    <img src="https://via.placeholder.com/50/800080/FFFFFF?text=F4" data-avatar-id="f4" style="width: 50px; height: 50px; margin: 5px; cursor: pointer;"/>
+                </div>
+                <button id="cancelAvatarButton">取消</button>
+            </div>
+
+            <!-- 修改电话弹窗 -->
+            <div id="phoneModal" style="display:none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; z-index: 100;">
+                <h3>修改电话号码</h3>
+                <p>新电话号码: <input type="text" id="newPhoneNumber"/></p>
+                <button id="savePhoneButton">确认</button>
+                <button id="cancelPhoneButton">取消</button>
+            </div>
+        </div>
+
+        <!-- 文件分类和列表区域 -->
+        <div id="fileManagement" style="margin-top: 20px;">
+            <h2>个人文件</h2>
+            <div id="fileCategories" style="margin-bottom: 10px;">
+                <button data-file-type="image">图片</button>
+                <button data-file-type="document">文档</button>
+                <button data-file-type="video">视频</button>
+                <button data-file-type="audio">音乐</button>
+                <button data-file-type="other">其他</button>
+                <button id="favoriteFilesButton">我的收藏</button>
+            </div>
+            <div id="fileSearch" style="margin-bottom: 10px;">
+                <input type="text" id="fileNameSearchInput" placeholder="输入文件名"/>
+                <button id="searchFilesButton">搜索</button>
+            </div>
+            <div id="fileListContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 10px;">
+                <table id="fileList" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #ddd; padding: 8px;"><input type="checkbox" id="selectAllFiles"/></th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">文件名</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">文件类型</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">文件大小</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">操作</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">收藏</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 文件列表将在这里动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+            <button id="downloadSelectedFiles" style="margin-top: 10px;">下载选中文件</button>
+        </div>
+        
+        <!-- 分享管理区域 -->
+        <div id="shareManagement" style="margin-top: 20px; display: none;">
+            <h2>我的分享</h2>
+            <div id="shareTabs" style="margin-bottom: 10px;">
+                <button id="mySharesTab" class="active-tab">我的链接分享</button>
+                <button id="receivedSharesTab">收到的分享</button>
+            </div>
+            <div id="shareSearch" style="margin-bottom: 10px;">
+                <input type="text" id="shareSearchInput" placeholder="搜索分享链接"/>
+                <button id="searchSharesButton">搜索</button>
+            </div>
+            <div id="shareListContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 10px;">
+                <table id="shareList" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #ddd; padding: 8px;"><input type="checkbox" id="selectAllShares"/></th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">文件名</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">访问次数</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">下载次数</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">分享码</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">创建时间</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">过期时间</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 分享列表将在这里动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+            <button id="clearInvalidShares" style="margin-top: 10px;">清除无效分享</button>
+        </div>
+
+        <script>
+            // 初始化页面
+            document.getElementById('fileManagement').style.display = 'block';
+            document.getElementById('personalSettings').style.display = 'none';
+            document.getElementById('shareManagement').style.display = 'none';
+            
+            // 页面切换按钮事件
+            document.getElementById('fileButton').addEventListener('click', () => {
+                document.getElementById('fileManagement').style.display = 'block';
+                document.getElementById('personalSettings').style.display = 'none';
+                document.getElementById('shareManagement').style.display = 'none';
+            });
+            
+            document.getElementById('shareButton').addEventListener('click', () => {
+                document.getElementById('fileManagement').style.display = 'none';
+                document.getElementById('personalSettings').style.display = 'none';
+                document.getElementById('shareManagement').style.display = 'block';
+                loadShares(userId, 'my', 0); // 默认加载我的分享
+            });
+            
+            // 获取用户信息
+            fetch(`/api/users/${userId}`)
+                .then(response => response.json())
+                .then(user => {
+                    document.getElementById('usernameDisplay').innerText = user.username || '';
+                    document.getElementById('employeeIdDisplay').innerText = user.employeeId || '';
+                    document.getElementById('departmentDisplay').innerText = user.department || '';
+                    document.getElementById('positionDisplay').innerText = user.position || '';
+                    document.getElementById('companyEmailDisplay').innerText = user.companyEmail || '';
+                    document.getElementById('phoneDisplay').innerText = user.phone || '';
+                    
+                    if (user.avatar) {
+                        document.getElementById('userAvatar').src = user.avatar;
+                    }
+                })
+                .catch(error => console.error('Error fetching user info:', error));
+
+            // 文件分类点击事件
+            document.getElementById('fileCategories').addEventListener('click', (event) => {
+                if (event.target.tagName === 'BUTTON') {
+                    const fileType = event.target.dataset.fileType;
+                    currentPage = 0; // 重置页码
+                    loadFiles(userId, fileType, currentPage); // 加载第一页文件
+                }
+            });
+
+            // 加载文件函数
+            let currentPage = 0;
+            let currentFileType = '';
+            let currentSearchFileName = '';
+            const pageSize = 100;
+
+            function loadFiles(userId, fileType, page, fileName = '') {
+                currentFileType = fileType;
+                currentSearchFileName = fileName;
+                let url = '';
+                if (fileType === 'favorite') {
+                    url = `/api/files/favorites/${userId}?page=${page}&size=${pageSize}`;
+                } else if (fileName) {
+                    url = `/api/files/search/${userId}?fileName=${fileName}&page=${page}&size=${pageSize}`;
+                } else {
+                    url = `/api/files/category/${userId}/${fileType}?page=${page}&size=${pageSize}`;
+                }
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(files => {
+                        const fileListBody = document.getElementById('fileList').getElementsByTagName('tbody')[0];
+                        if (page === 0) {
+                            fileListBody.innerHTML = ''; // 清空现有列表
+                        }
+                        files.forEach(file => {
+                            const row = fileListBody.insertRow();
+                            const favoriteButtonText = file.isFavorite ? '取消收藏' : '收藏';
+                            row.innerHTML = `
+                                <td style="border: 1px solid #ddd; padding: 8px;"><input type="checkbox" data-file-id="${file.id}"/></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><a href="#" class="file-title" data-file-id="${file.id}">${file.fileName}</a></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${file.fileType}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${(file.fileSize / (1024 * 1024)).toFixed(2)} MB</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><button class="download-button" data-file-id="${file.id}">下载</button></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><button class="favorite-button" data-file-id="${file.id}" data-is-favorite="${file.isFavorite}">${favoriteButtonText}</button></td>
+                            `;
+                        });
+                    })
+                    .catch(error => console.error('Error fetching files:', error));
+            }
+
+            // 加载分享函数
+            let currentSharePage = 0;
+            let currentShareType = 'my';
+            let currentShareSearch = '';
+            
+            function loadShares(userId, shareType, page, query = '') {
+                currentSharePage = page;
+                currentShareType = shareType;
+                currentShareSearch = query;
+                
+                let url = '';
+                if (query) {
+                    url = `/api/shares/${shareType}/${userId}/search?query=${query}&page=${page}&size=${pageSize}`;
+                } else {
+                    url = `/api/shares/${shareType}/${userId}?page=${page}&size=${pageSize}`;
+                }
+                
+                fetch(url)
+                    .then(response => response.json())
+                    .then(shares => {
+                        const shareListBody = document.getElementById('shareList').getElementsByTagName('tbody')[0];
+                        if (page === 0) {
+                            shareListBody.innerHTML = ''; // 清空现有列表
+                        }
+                        
+                        shares.forEach(share => {
+                            const row = shareListBody.insertRow();
+                            const createTime = new Date(share.createTime).toLocaleString();
+                            const expireTime = new Date(share.expireTime).toLocaleString();
+                            
+                            row.innerHTML = `
+                                <td style="border: 1px solid #ddd; padding: 8px;"><input type="checkbox" data-share-id="${share.id}"/></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><a href="#" class="share-file-title" data-share-id="${share.id}">${share.fileName}</a></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${share.viewCount}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${share.downloadCount}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${share.shareCode}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${createTime}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${expireTime}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">
+                                    <button class="copy-share-button" data-share-code="${share.shareCode}">复制</button>
+                                    <button class="delete-share-button" data-share-id="${share.id}">删除</button>
+                                </td>
+                            `;
+                        });
+                    })
+                    .catch(error => console.error(`Error fetching ${shareType} shares:`, error));
+            }
+
+            // 分享标签切换事件
+            document.getElementById('mySharesTab').addEventListener('click', () => {
+                document.getElementById('mySharesTab').classList.add('active-tab');
+                document.getElementById('receivedSharesTab').classList.remove('active-tab');
+                currentSharePage = 0;
+                loadShares(userId, 'my', 0);
+            });
+            
+            document.getElementById('receivedSharesTab').addEventListener('click', () => {
+                document.getElementById('mySharesTab').classList.remove('active-tab');
+                document.getElementById('receivedSharesTab').classList.add('active-tab');
+                currentSharePage = 0;
+                loadShares(userId, 'received', 0);
+            });
+            
+            // 分享搜索事件
+            document.getElementById('searchSharesButton').addEventListener('click', () => {
+                const query = document.getElementById('shareSearchInput').value;
+                currentSharePage = 0;
+                loadShares(userId, currentShareType, 0, query);
+            });
+            
+            // 分享滚动加载更多
+            document.getElementById('shareListContainer').addEventListener('scroll', () => {
+                const container = document.getElementById('shareListContainer');
+                if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
+                    currentSharePage++;
+                    loadShares(userId, currentShareType, currentSharePage, currentShareSearch);
+                }
+            });
+            
+            // 清除无效分享
+            document.getElementById('clearInvalidShares').addEventListener('click', () => {
+                const selectedShares = Array.from(document.querySelectorAll('#shareList tbody input[type="checkbox"]:checked'))
+                                        .map(checkbox => checkbox.dataset.shareId);
+                if (selectedShares.length > 0) {
+                    fetch('/api/shares/batch', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(selectedShares)
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        alert(result.message);
+                        loadShares(userId, currentShareType, 0); // 重新加载分享列表
+                    })
+                    .catch(error => console.error('Error deleting shares:', error));
+                } else {
+                    alert('请选择要清除的分享。');
+                }
+            });
+            
+            // 分享列表操作事件
+            document.getElementById('shareList').addEventListener('click', (event) => {
+                if (event.target.classList.contains('share-file-title')) {
+                    event.preventDefault();
+                    const shareId = event.target.dataset.shareId;
+                    window.open(`/api/shares/${shareId}`, '_blank');
+                } else if (event.target.classList.contains('copy-share-button')) {
+                    const shareCode = event.target.dataset.shareCode;
+                    navigator.clipboard.writeText(`${window.location.origin}/share/${shareCode}`)
+                        .then(() => alert('分享链接已复制到剪贴板'))
+                        .catch(() => alert('复制失败，请手动复制'));
+                } else if (event.target.classList.contains('delete-share-button')) {
+                    const shareId = event.target.dataset.shareId;
+                    if (confirm('确定要删除这个分享吗？')) {
+                        fetch(`/api/shares/${shareId}`, {
+                            method: 'DELETE'
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            alert(result.message);
+                            loadShares(userId, currentShareType, currentSharePage);
+                        })
+                        .catch(error => console.error('Error deleting share:', error));
+                    }
+                }
+            });
+            
+            // 全选/取消全选分享
+            document.getElementById('selectAllShares').addEventListener('change', (event) => {
+                const isChecked = event.target.checked;
+                document.querySelectorAll('#shareList tbody input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+            });
+
+            // 初始加载文件 (例如，加载所有文件或默认图片类型)
+            // loadFiles(userId, 'all', 0); // 假设有一个'all'类型或者默认加载图片
+
+            // 下载选中文件
+            document.getElementById('downloadSelectedFiles').addEventListener('click', () => {
+                const selectedFiles = Array.from(document.querySelectorAll('#fileList tbody input[type="checkbox"]:checked'))
+                                        .map(checkbox => checkbox.dataset.fileId);
+                if (selectedFiles.length > 0) {
+                    selectedFiles.forEach(fileId => {
+                        window.open(`/api/files/download/${fileId}`, '_blank');
+                    });
+                } else {
+                    alert('请选择要下载的文件。');
+                }
+            });
+
+            // 文件标题点击预览和收藏按钮点击事件
+            document.getElementById('fileList').addEventListener('click', (event) => {
+                if (event.target.classList.contains('file-title')) {
+                    event.preventDefault();
+                    const fileId = event.target.dataset.fileId;
+                    window.open(`/api/files/preview/${fileId}`, '_blank');
+                } else if (event.target.classList.contains('download-button')) {
+                    const fileId = event.target.dataset.fileId;
+                    window.open(`/api/files/download/${fileId}`, '_blank');
+                } else if (event.target.classList.contains('favorite-button')) {
+                    const fileId = event.target.dataset.fileId;
+                    const isFavorite = event.target.dataset.isFavorite === 'true';
+                    const newFavoriteStatus = !isFavorite;
+
+                    fetch(`/api/files/favorite/${fileId}?isFavorite=${newFavoriteStatus}`, {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            event.target.dataset.isFavorite = newFavoriteStatus;
+                            event.target.innerText = newFavoriteStatus ? '取消收藏' : '收藏';
+                            alert(`文件${newFavoriteStatus ? '收藏' : '取消收藏'}成功！`);
+                        } else {
+                            alert('操作失败，请重试。');
+                        }
+                    })
+                    .catch(error => console.error('Error setting favorite status:', error));
+                }
+            });
+
+            // 全选/取消全选
+            document.getElementById('selectAllFiles').addEventListener('change', (event) => {
+                const isChecked = event.target.checked;
+                document.querySelectorAll('#fileList tbody input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+            });
+
+            // 滚动加载更多
+            document.getElementById('fileListContainer').addEventListener('scroll', () => {
+                const container = document.getElementById('fileListContainer');
+                if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
+                    currentPage++;
+                    if (currentSearchFileName) {
+                        loadFiles(userId, currentFileType, currentPage, currentSearchFileName);
+                    } else {
+                        loadFiles(userId, currentFileType, currentPage);
+                    }
+                }
+            });
+
+            // 我的收藏按钮点击事件
+            document.getElementById('favoriteFilesButton').addEventListener('click', () => {
+                currentPage = 0; // 重置页码
+                currentSearchFileName = ''; // 清空搜索文件名
+                loadFiles(userId, 'favorite', currentPage); // 加载收藏文件
+            });
+
+            // 搜索按钮点击事件
+            document.getElementById('searchFilesButton').addEventListener('click', () => {
+                const fileName = document.getElementById('fileNameSearchInput').value;
+                currentPage = 0; // 重置页码
+                loadFiles(userId, '', currentPage, fileName); // 搜索文件
+            });
+            
+            // 添加CSS样式
+            const style = document.createElement('style');
+            style.textContent = `
+                .active-tab {
+                    background-color: #4CAF50;
+                    color: white;
+                }
+                #shareTabs button {
+                    padding: 8px 16px;
+                    cursor: pointer;
+                    background-color: #f1f1f1;
+                    border: none;
+                    outline: none;
+                }
+                #shareTabs button:hover {
+                    background-color: #ddd;
+                }
+            `;
+            document.head.appendChild(style);
+        </script>
+    </body>
 </html>
