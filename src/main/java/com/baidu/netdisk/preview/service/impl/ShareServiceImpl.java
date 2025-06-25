@@ -1,6 +1,6 @@
 package com.baidu.netdisk.preview.service.impl;
 
-import com.baidu.netdisk.entity.NetdiskFile;
+import com.baidu.netdisk.entity.File;
 import com.baidu.netdisk.entity.Share;
 import com.baidu.netdisk.preview.repository.FileRepository;
 import com.baidu.netdisk.preview.repository.ShareRepository;
@@ -29,7 +29,7 @@ public class ShareServiceImpl implements ShareService {
     @Transactional
     public Share createShare(Long userId, Long fileId, String shareType, Long receiverId, Integer expireDays) {
         // 获取文件信息
-        NetdiskFile file = fileRepository.findById(fileId).orElse(null);
+        File file = fileRepository.findById(fileId).orElse(null);
         if (file == null) {
             return null;
         }
@@ -129,7 +129,7 @@ public class ShareServiceImpl implements ShareService {
             return null;
         }
         
-        NetdiskFile file = fileRepository.findById(share.getFileId()).orElse(null);
+        File file = fileRepository.findById(share.getFileId()).orElse(null);
         if (file == null) {
             return null;
         }

@@ -1,6 +1,6 @@
 package com.baidu.netdisk.preview.service.impl;
 
-import com.baidu.netdisk.entity.NetdiskFile;
+import com.baidu.netdisk.entity.File;
 import com.baidu.netdisk.preview.repository.FileRepository;
 import com.baidu.netdisk.preview.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -26,34 +25,34 @@ public class FileServiceImpl implements FileService {
     private String uploadDir;
 
     @Override
-    public List<NetdiskFile> getFilesByUserIdAndFileType(Long userId, String fileType, Pageable pageable) {
+    public List<File> getFilesByUserIdAndFileType(Long userId, String fileType, Pageable pageable) {
         return fileRepository.findByUserIdAndFileType(userId, fileType, pageable);
     }
 
     @Override
-    public List<NetdiskFile> getFilesByUserIdAndFileType(Long userId, String fileType) {
+    public List<File> getFilesByUserIdAndFileType(Long userId, String fileType) {
         return fileRepository.findByUserIdAndFileType(userId, fileType);
     }
 
     @Override
-    public NetdiskFile getFileById(Long fileId) {
-        Optional<NetdiskFile> fileOptional = fileRepository.findById(fileId);
+    public File getFileById(Long fileId) {
+        Optional<File> fileOptional = fileRepository.findById(fileId);
         return fileOptional.orElse(null);
     }
 
     @Override
     public byte[] downloadFile(Long fileId) {
-        NetdiskFile file = getFileById(fileId);
+        File file = getFileById(fileId);
         if (file != null) {
             try {
                 // 实际应用中从文件存储路径读取文件内容
                 String filePath = file.getFilePath();
                 if (filePath == null || filePath.isEmpty()) {
                     // 如果文件路径为空，使用默认路径
-                    filePath = uploadDir + File.separator + file.getId() + "_" + file.getFileName();
+                    filePath = uploadDir + java.io.File.separator + file.getId() + "_" + file.getFileName();
                 }
                 
-                File physicalFile = new File(filePath);
+                java.io.File physicalFile = new java.io.File(filePath);
                 if (physicalFile.exists()) {
                     return Files.readAllBytes(Paths.get(filePath));
                 } else {
@@ -91,7 +90,7 @@ public class FileServiceImpl implements FileService {
     @Override
     @Transactional
     public void setFileFavoriteStatus(Long fileId, Boolean isFavorite) {
-        Optional<NetdiskFile> fileOptional = fileRepository.findById(fileId);
+        Optional<File> fileOptional = fileRepository.findById(fileId);
         fileOptional.ifPresent(file -> {
             file.setIsFavorite(isFavorite);
             fileRepository.save(file);
@@ -99,17 +98,17 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<NetdiskFile> getFavoriteFilesByUserId(Long userId, Pageable pageable) {
+    public List<File> getFavoriteFilesByUserId(Long userId, Pageable pageable) {
         return fileRepository.findByUserIdAndIsFavorite(userId, true, pageable);
     }
 
     @Override
-    public List<NetdiskFile> getFavoriteFilesByUserId(Long userId) {
+    public List<File> getFavoriteFilesByUserId(Long userId) {
         return fileRepository.findByUserIdAndIsFavorite(userId, true);
     }
 
     @Override
-    public List<NetdiskFile> searchFilesByFileName(Long userId, String fileName, Pageable pageable) {
+    public List<File> searchFilesByFileName(Long userId, String fileName, Pageable pageable) {
         return fileRepository.findByUserIdAndFileNameContaining(userId, fileName, pageable);
     }
 }

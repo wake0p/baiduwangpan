@@ -25,11 +25,11 @@ public interface ShareRepository extends JpaRepository<Share, Long> {
     List<Share> findReceivedSharesByUserId(@Param("userId") Long userId, Pageable pageable);
     
     // 根据关键词搜索分享（文件名或分享码）
-    @Query("SELECT s FROM Share s JOIN NetdiskFile f ON s.fileId = f.id WHERE s.userId = :userId AND (f.fileName LIKE CONCAT('%', :query, '%') OR s.shareCode LIKE CONCAT('%', :query, '%')) ORDER BY s.createTime DESC")
+    @Query("SELECT s FROM Share s JOIN File f ON s.fileId = f.id WHERE s.userId = :userId AND (f.fileName LIKE CONCAT('%', :query, '%') OR s.shareCode LIKE CONCAT('%', :query, '%')) ORDER BY s.createTime DESC")
     List<Share> searchMyShares(@Param("userId") Long userId, @Param("query") String query, Pageable pageable);
     
     // 根据关键词搜索接收到的分享
-    @Query("SELECT s FROM Share s JOIN NetdiskFile f ON s.fileId = f.id WHERE s.receiverId = :userId AND (f.fileName LIKE CONCAT('%', :query, '%') OR s.shareCode LIKE CONCAT('%', :query, '%')) ORDER BY s.createTime DESC")
+    @Query("SELECT s FROM Share s JOIN File f ON s.fileId = f.id WHERE s.receiverId = :userId AND (f.fileName LIKE CONCAT('%', :query, '%') OR s.shareCode LIKE CONCAT('%', :query, '%')) ORDER BY s.createTime DESC")
     List<Share> searchReceivedShares(@Param("userId") Long userId, @Param("query") String query, Pageable pageable);
     
     // 根据分享码查找分享

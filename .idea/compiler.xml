@@ -13,9 +13,6 @@
         <module name="Netdisk" />
       </profile>
     </annotationProcessing>
-<<<<<<< HEAD
     <bytecodeTargetLevel target="17" />
-=======
->>>>>>> hy
   </component>
 </project>
