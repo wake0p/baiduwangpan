@@ -1,10 +1,14 @@
 package com.baidu.netdisk.entity;
 
 import lombok.Data;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
+@Entity
 public class File { // 文件信息
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String fileName;        // 文件名
     private String fileType;        // 文件类型
@@ -13,8 +17,12 @@ public class File { // 文件信息
     private String fileMd5;         // 文件MD5值
     private Long folderId;          // 所属文件夹ID
     private Long userId;            // 上传用户ID
+    private Boolean isFavorite;     // 是否收藏：true-收藏，false-未收藏
+    
+    @Column(nullable = false, updatable = false)
     private Boolean status;         // 状态：false-删除，true-正常
     private LocalDateTime createTime;
+    
     private LocalDateTime updateTime;
 
     // ====== 回收站相关字段 ======
