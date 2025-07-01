@@ -213,36 +213,44 @@ public class FileManagementController {
     // ===================== 回收站相关接口 =====================
 
     /**
+     * 统一返回结构
+     */
+    static class Result {
+        private boolean success;
+        private String message;
+        public Result(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+    }
+
+    /**
      * 文件/文件夹移入回收站
      */
     @PostMapping("/recycle/bin")
-    public ResponseEntity<Void> moveToRecycleBin(
+    public ResponseEntity<Result> moveToRecycleBin(
             @RequestBody MoveToRecycleRequest request
-
     ) {
-        Long userId = request.getUserId(); // 从请求体中获取userId
-
-        // 校验userId
+        Long userId = request.getUserId();
         if (userId == null || userId <= 0) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new Result(false, "用户ID无效"));
         }
         try {
-            // 校验参数
-            if (CollectionUtils.isEmpty(request.getFileIds()) && CollectionUtils.isEmpty(request.getFolderIds())) {
-                return ResponseEntity.badRequest().build();
+            if ((request.getFileIds() == null || request.getFileIds().isEmpty()) &&
+                (request.getFolderIds() == null || request.getFolderIds().isEmpty())) {
+                return ResponseEntity.badRequest().body(new Result(false, "未指定要删除的文件或文件夹"));
             }
-
-            // 执行移入回收站操作
             fileService.moveToRecycleBin(request.getFileIds(), userId);
             folderService.moveToRecycleBin(request.getFolderIds(), userId);
-
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(new Result(true, "移入回收站成功"));
         } catch (IllegalArgumentException e) {
             log.error("移入回收站失败，参数错误：{}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new Result(false, "参数错误：" + e.getMessage()));
         } catch (Exception e) {
             log.error("移入回收站失败，用户ID：{}", userId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Result(false, "服务器异常，移入回收站失败"));
         }
     }
 
@@ -250,57 +258,49 @@ public class FileManagementController {
      * 从回收站恢复文件/文件夹
      */
     @PostMapping("/recycle/bin/restore")
-    public ResponseEntity<Void> restoreFromRecycleBin(
+    public ResponseEntity<Result> restoreFromRecycleBin(
             @RequestBody RestoreRequest request,
             @RequestParam("userId") Long userId
     ) {
         try {
-            // 校验参数
-            if (CollectionUtils.isEmpty(request.getFileIds()) && CollectionUtils.isEmpty(request.getFolderIds())) {
-                return ResponseEntity.badRequest().build();
+            if ((request.getFileIds() == null || request.getFileIds().isEmpty()) &&
+                (request.getFolderIds() == null || request.getFolderIds().isEmpty())) {
+                return ResponseEntity.badRequest().body(new Result(false, "未指定要恢复的文件或文件夹"));
             }
-
-            // 执行恢复操作
             fileService.restoreFromRecycleBin(request.getFileIds(), userId);
             folderService.restoreFromRecycleBin(request.getFolderIds(), userId);
-
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(new Result(true, "恢复成功"));
         } catch (IllegalArgumentException e) {
             log.error("恢复失败，参数错误：{}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new Result(false, "参数错误：" + e.getMessage()));
         } catch (Exception e) {
             log.error("恢复失败，用户ID：{}", userId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Result(false, "服务器异常，恢复失败"));
         }
     }
 
     /**
      * 彻底删除文件/文件夹
      */
-    // FileManagementController.java
-
-    // 彻底删除文件/文件夹
     @DeleteMapping("/recycle/bin")
-    public ResponseEntity<Void> deletePermanently(
+    public ResponseEntity<Result> deletePermanently(
             @RequestBody DeleteRequest request,
             @RequestParam("userId") Long userId
     ) {
         try {
-            // 校验参数
-            if (CollectionUtils.isEmpty(request.getFileIds()) && CollectionUtils.isEmpty(request.getFolderIds())) {
-                return ResponseEntity.badRequest().build();
+            if ((request.getFileIds() == null || request.getFileIds().isEmpty()) &&
+                (request.getFolderIds() == null || request.getFolderIds().isEmpty())) {
+                return ResponseEntity.badRequest().body(new Result(false, "未指定要删除的文件或文件夹"));
             }
-            // 执行彻底删除操作（传递 userId）
             fileService.deletePermanently(request.getFileIds(), userId);
             folderService.deletePermanently(request.getFolderIds(), userId);
-
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(new Result(true, "删除成功"));
         } catch (IllegalArgumentException e) {
             log.error("彻底删除失败，参数错误：{}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new Result(false, "参数错误：" + e.getMessage()));
         } catch (Exception e) {
             log.error("彻底删除失败，用户ID：{}", userId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Result(false, "服务器异常，删除失败"));
         }
     }
 
@@ -640,5 +640,55 @@ public class FileManagementController {
         
         public Boolean getFavorite() { return favorite; }
         public void setFavorite(Boolean favorite) { this.favorite = favorite; }
+    }
+
+    // ===================== 文件上传与下载 =====================
+
+    /**
+     * 文件上传接口
+     */
+    @PostMapping("/files/upload")
+    public ResponseEntity<File> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("folderId") Long folderId,
+            @RequestParam("userId") Long userId
+    ) {
+        try {
+            String fileName = file.getOriginalFilename();
+            String fileType = fileName != null && fileName.contains(".") ?
+                    fileName.substring(fileName.lastIndexOf('.') + 1) : "unknown";
+            Boolean status = true;
+            Boolean isDeleted = false;
+            File savedFile = fileService.createFile(file, folderId, fileName, fileType, status, userId, isDeleted);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedFile);
+        } catch (Exception e) {
+            log.error("文件上传失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    /**
+     * 文件下载接口
+     */
+    @GetMapping("/files/download/{fileId}")
+    public ResponseEntity<?> downloadFile(@PathVariable Long fileId) {
+        File file = fileService.getFileById(fileId);
+        if (file == null || file.getIsDeleted() || !file.getStatus()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("文件不存在或已被删除");
+        }
+        try {
+            java.nio.file.Path filePath = fileService.getFullFilePath(file);
+            if (!java.nio.file.Files.exists(filePath)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("文件不存在于服务器");
+            }
+            String fileName = file.getFileName();
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + java.net.URLEncoder.encode(fileName, "UTF-8") + "\"")
+                    .header("Content-Type", "application/octet-stream")
+                    .body(new org.springframework.core.io.FileSystemResource(filePath));
+        } catch (Exception e) {
+            log.error("文件下载失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("文件下载失败");
+        }
     }
 }
