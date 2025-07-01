@@ -18,7 +18,7 @@
     <!-- ===================== 基础查询 ===================== -->
     <select id="getFoldersByFolderId" resultMap="FolderResultMap">
         SELECT * FROM folder
-        WHERE parent_id = #{folderId}
+        WHERE id = #{folderId}
           AND status = true
           AND is_deleted = false
     </select>
@@ -168,6 +168,40 @@
         SELECT COUNT(*) FROM folder
         WHERE user_id = #{userId}
           AND is_deleted = true
+    </select>
+
+    <!-- ===================== 层级结构相关查询 ===================== -->
+    
+    <!-- 获取用户所有文件夹（用于层级结构） -->
+    <select id="getAllFoldersByUserId" resultMap="FolderResultMap">
+        SELECT * FROM folder
+        WHERE user_id = #{userId}
+          AND status = true
+          AND is_deleted = false
+        ORDER BY parent_id, folder_name
+    </select>
+
+    <!-- 获取指定文件夹下的所有子文件夹（包括子文件夹的子文件夹） -->
+    <select id="getAllFoldersByFolderId" resultMap="FolderResultMap">
+        WITH RECURSIVE folder_tree AS (
+            SELECT * FROM folder
+            WHERE id = #{folderId}
+              AND user_id = #{userId}
+              AND status = true
+              AND is_deleted = false
+            
+            UNION ALL
+            
+            SELECT f.*
+            FROM folder f
+            JOIN folder_tree ft ON f.parent_id = ft.id
+            WHERE f.user_id = #{userId}
+              AND f.status = true
+              AND f.is_deleted = false
+        )
+        SELECT * FROM folder_tree
+        WHERE id != #{folderId}
+        ORDER BY parent_id, folder_name
     </select>
 
 </mapper>

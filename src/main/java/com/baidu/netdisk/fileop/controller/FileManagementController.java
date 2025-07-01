@@ -1,4 +1,3 @@
-
 package com.baidu.netdisk.fileop.controller;
 
 import com.baidu.netdisk.entity.File;
@@ -397,4 +396,249 @@ public class FileManagementController {
     }
 
     private static final Logger log = LoggerFactory.getLogger(FileManagementController.class);
+
+    // ===================== 层级结构相关接口 =====================
+
+    /**
+     * 获取用户所有文件和文件夹的层级结构
+     */
+    @GetMapping("/user/{userId}/hierarchy")
+    public ResponseEntity<HierarchyResponse> getUserHierarchy(@PathVariable Long userId) {
+        try {
+            // 参数校验
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // 获取用户所有文件和文件夹
+            List<File> allFiles = fileService.getAllFilesByUserId(userId);
+            List<Folder> allFolders = folderService.getAllFoldersByUserId(userId);
+
+            // 构建层级结构
+            HierarchyResponse response = buildHierarchyStructure(allFiles, allFolders, userId);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("获取用户层级结构失败，用户ID：{}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 获取用户指定文件夹下的层级结构
+     */
+    @GetMapping("/user/{userId}/folder/{folderId}/hierarchy")
+    public ResponseEntity<HierarchyResponse> getFolderHierarchy(
+            @PathVariable Long userId,
+            @PathVariable Long folderId
+    ) {
+        try {
+            // 参数校验
+            if (userId == null || userId <= 0 || folderId == null || folderId < 0) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // 获取指定文件夹下的所有文件和子文件夹（包括递归）
+            List<File> files = fileService.getAllFilesByFolderId(folderId, userId);
+            List<Folder> folders = folderService.getAllFoldersByFolderId(folderId, userId);
+
+            // 构建层级结构
+            HierarchyResponse response = buildHierarchyStructure(files, folders, userId);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("获取文件夹层级结构失败，用户ID：{}，文件夹ID：{}", userId, folderId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 构建层级结构的辅助方法
+     */
+    private HierarchyResponse buildHierarchyStructure(List<File> files, List<Folder> folders, Long userId) {
+        HierarchyResponse response = new HierarchyResponse();
+        
+        // 过滤当前用户的文件和文件夹（服务层已经过滤，这里再次确认）
+        List<File> userFiles = files.stream()
+                .filter(file -> file.getUserId().equals(userId) && !file.getIsDeleted())
+                .collect(java.util.stream.Collectors.toList());
+        
+        List<Folder> userFolders = folders.stream()
+                .filter(folder -> folder.getUserId().equals(userId) && !folder.getIsDeleted())
+                .collect(java.util.stream.Collectors.toList());
+
+        // 构建文件夹层级结构
+        List<FolderNode> folderNodes = buildFolderHierarchy(userFolders, userId);
+        
+        // 构建文件节点（按文件夹分组）
+        List<FileNode> fileNodes = userFiles.stream()
+                .map(this::convertToFileNode)
+                .collect(java.util.stream.Collectors.toList());
+
+        response.setFolders(folderNodes);
+        response.setFiles(fileNodes);
+        
+        return response;
+    }
+
+    /**
+     * 构建文件夹层级结构
+     */
+    private List<FolderNode> buildFolderHierarchy(List<Folder> folders, Long userId) {
+        // 创建文件夹ID到文件夹的映射
+        java.util.Map<Long, Folder> folderMap = folders.stream()
+                .collect(java.util.stream.Collectors.toMap(Folder::getId, folder -> folder));
+
+        // 找到根文件夹（parentId为0或null的文件夹）
+        List<FolderNode> rootFolders = new java.util.ArrayList<>();
+        
+        for (Folder folder : folders) {
+            if (folder.getParentId() == null || folder.getParentId() == 0) {
+                FolderNode node = convertToFolderNode(folder);
+                buildFolderChildren(node, folderMap, userId);
+                rootFolders.add(node);
+            }
+        }
+
+        return rootFolders;
+    }
+
+    /**
+     * 递归构建文件夹的子节点
+     */
+    private void buildFolderChildren(FolderNode parentNode, java.util.Map<Long, Folder> folderMap, Long userId) {
+        List<FolderNode> children = new java.util.ArrayList<>();
+        
+        for (Folder folder : folderMap.values()) {
+            if (folder.getParentId() != null && folder.getParentId().equals(parentNode.getId())) {
+                FolderNode childNode = convertToFolderNode(folder);
+                buildFolderChildren(childNode, folderMap, userId);
+                children.add(childNode);
+            }
+        }
+        
+        parentNode.setChildren(children);
+    }
+
+    /**
+     * 将Folder实体转换为FolderNode
+     */
+    private FolderNode convertToFolderNode(Folder folder) {
+        FolderNode node = new FolderNode();
+        node.setId(folder.getId());
+        node.setName(folder.getFolderName());
+        node.setPath(folder.getFolderPath());
+        node.setParentId(folder.getParentId());
+        node.setCreateTime(folder.getCreateTime());
+        node.setUpdateTime(folder.getUpdateTime());
+        return node;
+    }
+
+    /**
+     * 将File实体转换为FileNode
+     */
+    private FileNode convertToFileNode(File file) {
+        FileNode node = new FileNode();
+        node.setId(file.getId());
+        node.setName(file.getFileName());
+        node.setType(file.getFileType());
+        node.setSize(file.getFileSize());
+        node.setFolderId(file.getFolderId());
+        node.setCreateTime(file.getCreateTime());
+        node.setUpdateTime(file.getUpdateTime());
+        node.setFavorite(file.getIsFavorite());
+        return node;
+    }
+
+    // 层级结构响应类
+    static class HierarchyResponse {
+        private List<FolderNode> folders;
+        private List<FileNode> files;
+
+        public List<FolderNode> getFolders() {
+            return folders;
+        }
+
+        public void setFolders(List<FolderNode> folders) {
+            this.folders = folders;
+        }
+
+        public List<FileNode> getFiles() {
+            return files;
+        }
+
+        public void setFiles(List<FileNode> files) {
+            this.files = files;
+        }
+    }
+
+    // 文件夹节点类
+    static class FolderNode {
+        private Long id;
+        private String name;
+        private String path;
+        private Long parentId;
+        private LocalDateTime createTime;
+        private LocalDateTime updateTime;
+        private List<FolderNode> children;
+
+        // Getters and Setters
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        
+        public String getPath() { return path; }
+        public void setPath(String path) { this.path = path; }
+        
+        public Long getParentId() { return parentId; }
+        public void setParentId(Long parentId) { this.parentId = parentId; }
+        
+        public LocalDateTime getCreateTime() { return createTime; }
+        public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+        
+        public LocalDateTime getUpdateTime() { return updateTime; }
+        public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
+        
+        public List<FolderNode> getChildren() { return children; }
+        public void setChildren(List<FolderNode> children) { this.children = children; }
+    }
+
+    // 文件节点类
+    static class FileNode {
+        private Long id;
+        private String name;
+        private String type;
+        private Long size;
+        private Long folderId;
+        private LocalDateTime createTime;
+        private LocalDateTime updateTime;
+        private Boolean favorite;
+
+        // Getters and Setters
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+        
+        public Long getSize() { return size; }
+        public void setSize(Long size) { this.size = size; }
+        
+        public Long getFolderId() { return folderId; }
+        public void setFolderId(Long folderId) { this.folderId = folderId; }
+        
+        public LocalDateTime getCreateTime() { return createTime; }
+        public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+        
+        public LocalDateTime getUpdateTime() { return updateTime; }
+        public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
+        
+        public Boolean getFavorite() { return favorite; }
+        public void setFavorite(Boolean favorite) { this.favorite = favorite; }
+    }
 }

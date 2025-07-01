@@ -61,4 +61,19 @@ public interface FileMapper {
     );
 
     int getRecycleBinFileCount(@Param("userId") Long userId);
+
+    // ===================== 层级结构相关方法 =====================
+
+    /**
+     * 获取用户所有文件（用于层级结构）
+     */
+    List<File> getAllFilesByUserId(@Param("userId") Long userId);
+
+    /**
+     * 获取指定文件夹下的所有文件（包括子文件夹中的文件）
+     */
+    List<File> getAllFilesByFolderId(
+            @Param("folderId") Long folderId,
+            @Param("userId") Long userId
+    );
 }

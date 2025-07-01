@@ -164,4 +164,41 @@
           AND is_deleted = true
     </select>
 
+    <!-- ===================== 层级结构相关查询 ===================== -->
+    
+    <!-- 获取用户所有文件（用于层级结构） -->
+    <select id="getAllFilesByUserId" resultMap="FileResultMap">
+        SELECT * FROM file
+        WHERE user_id = #{userId}
+          AND status = true
+          AND is_deleted = false
+        ORDER BY folder_id, file_name
+    </select>
+
+    <!-- 获取指定文件夹下的所有文件（包括子文件夹中的文件） -->
+    <select id="getAllFilesByFolderId" resultMap="FileResultMap">
+        WITH RECURSIVE folder_tree AS (
+            SELECT id FROM folder
+            WHERE id = #{folderId}
+              AND user_id = #{userId}
+              AND status = true
+              AND is_deleted = false
+            
+            UNION ALL
+            
+            SELECT f.id
+            FROM folder f
+            JOIN folder_tree ft ON f.parent_id = ft.id
+            WHERE f.user_id = #{userId}
+              AND f.status = true
+              AND f.is_deleted = false
+        )
+        SELECT f.* FROM file f
+        JOIN folder_tree ft ON f.folder_id = ft.id
+        WHERE f.user_id = #{userId}
+          AND f.status = true
+          AND f.is_deleted = false
+        ORDER BY f.folder_id, f.file_name
+    </select>
+
 </mapper>

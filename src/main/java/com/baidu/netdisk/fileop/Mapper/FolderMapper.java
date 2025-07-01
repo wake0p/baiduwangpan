@@ -52,4 +52,20 @@ public interface FolderMapper {
     // 回收站文件夹总数（用于分页计算）
     int getRecycleBinFolderCount(@Param("userId") Long userId);
 
-    Folder getParentInfo(Long parentId);}
+    Folder getParentInfo(Long parentId);
+
+    // ===================== 层级结构相关方法 =====================
+
+    /**
+     * 获取用户所有文件夹（用于层级结构）
+     */
+    List<Folder> getAllFoldersByUserId(@Param("userId") Long userId);
+
+    /**
+     * 获取指定文件夹下的所有子文件夹（包括子文件夹的子文件夹）
+     */
+    List<Folder> getAllFoldersByFolderId(
+            @Param("folderId") Long folderId,
+            @Param("userId") Long userId
+    );
+}

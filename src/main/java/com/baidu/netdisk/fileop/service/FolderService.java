@@ -336,4 +336,20 @@ public class FolderService {
     public int getRecycleBinFolderCount(Long userId) {
         return folderMapper.getRecycleBinFolderCount(userId);
     }
+
+    // ===================== 层级结构相关方法 =====================
+
+    /**
+     * 获取用户所有文件夹（用于层级结构）
+     */
+    public List<Folder> getAllFoldersByUserId(Long userId) {
+        return folderMapper.getAllFoldersByUserId(userId);
+    }
+
+    /**
+     * 获取指定文件夹下的所有子文件夹（包括子文件夹的子文件夹）
+     */
+    public List<Folder> getAllFoldersByFolderId(Long folderId, Long userId) {
+        return folderMapper.getAllFoldersByFolderId(folderId, userId);
+    }
 }

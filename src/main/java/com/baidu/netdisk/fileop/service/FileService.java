@@ -197,4 +197,20 @@ public class FileService {
     public int getRecycleBinFileCount(Long userId) {
         return fileMapper.getRecycleBinFileCount(userId);
     }
+
+    // ===================== 层级结构相关方法 =====================
+
+    /**
+     * 获取用户所有文件（用于层级结构）
+     */
+    public List<File> getAllFilesByUserId(Long userId) {
+        return fileMapper.getAllFilesByUserId(userId);
+    }
+
+    /**
+     * 获取指定文件夹下的所有文件（包括子文件夹中的文件）
+     */
+    public List<File> getAllFilesByFolderId(Long folderId, Long userId) {
+        return fileMapper.getAllFilesByFolderId(folderId, userId);
+    }
 }
