@@ -2,7 +2,7 @@ package com.baidu.netdisk.preview.service.impl;
 
 import com.baidu.netdisk.entity.User;
 import com.baidu.netdisk.preview.repository.UserRepository;
-import com.baidu.netdisk.preview.service.UserService;
+import com.baidu.netdisk.preview.service.UsersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class UsersServiceImpl implements UsersService {
 
     private static final long DEFAULT_TOTAL_SPACE = 10L * 1024 * 1024 * 1024; // 10GB 默认空间
 

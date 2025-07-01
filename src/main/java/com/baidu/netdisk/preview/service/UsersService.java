@@ -2,7 +2,7 @@ package com.baidu.netdisk.preview.service;
 
 import com.baidu.netdisk.entity.User;
 
-public interface UserService {
+public interface UsersService {
     User getUserById(Long userId);
     User createUser(User user);
     void updateUserSpace(Long userId, long usedSpace);

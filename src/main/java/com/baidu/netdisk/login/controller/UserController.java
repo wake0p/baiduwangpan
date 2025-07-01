@@ -41,7 +41,7 @@ public class UserController {
         if (storedCaptcha == null || !storedCaptcha.equals(captchaInput)) {
             result.put("success", false);
             result.put("errorType", "captcha");
-            result.put("message", "验证码错误");
+            result.put("message", "验证码错误" + storedCaptcha + " " + captchaInput);
             return result;
         }
 

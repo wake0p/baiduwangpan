@@ -1,7 +1,7 @@
 package com.baidu.netdisk.preview.controller;
 
 import com.baidu.netdisk.entity.User;
-import com.baidu.netdisk.preview.service.UserService;
+import com.baidu.netdisk.preview.service.UsersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,10 +11,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-public class UserController {
+public class UsersController {
 
     @Autowired
-    private UserService userService;
+    private UsersService userService;
 
     @GetMapping("/{userId}/space-info")
     public ResponseEntity<User> getUserSpaceInfo(@PathVariable Long userId) {
