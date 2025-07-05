@@ -83,6 +83,33 @@ public class UserServiceImpl implements UserService {
         }
         return user;
     }
+    @Override
+    public void deleteUser(String username) {
+        User user = usersRepository.findByUsername(username);
+        if (user != null) {
+            usersRepository.delete(user);
+        }
+    }
 
+    @Override
+    public User unbanUser(String username) {
+        User user = usersRepository.findByUsername(username);
+        if (user != null) {
+            user.setStatus(1); // 设置用户状态为正常
+            user.setUpdateTime(LocalDateTime.now());
+            usersRepository.save(user);
+        }
+        return user;
+    }
+    @Override
+    public User setAdmin(String username, boolean isAdmin) {
+        User user = usersRepository.findByUsername(username);
+        if (user != null) {
+            user.setIsAdmin(isAdmin ? 1 : 0);
+            user.setUpdateTime(LocalDateTime.now());
+            usersRepository.save(user);
+        }
+        return user;
+    }
 }
 

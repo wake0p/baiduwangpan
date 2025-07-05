@@ -415,7 +415,7 @@ public class FileManagementController {
             List<Folder> allFolders = folderService.getAllFoldersByUserId(userId);
 
             // 构建层级结构
-            HierarchyResponse response = buildHierarchyStructure(allFiles, allFolders, userId);
+            HierarchyResponse response = buildHierarchyStructure(allFiles, allFolders, userId, 1);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -441,10 +441,10 @@ public class FileManagementController {
             // 获取指定文件夹下的所有文件和子文件夹（包括递归）
             List<File> files = fileService.getAllFilesByFolderId(folderId, userId);
             List<Folder> folders = folderService.getAllFoldersByFolderId(folderId, userId);
-
+            System.out.println("folders from db: " + folders);
             // 构建层级结构
-            HierarchyResponse response = buildHierarchyStructure(files, folders, userId);
-
+            HierarchyResponse response = buildHierarchyStructure(files, folders, userId, 2);
+            System.out.println("response: " + response);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("获取文件夹层级结构失败，用户ID：{}，文件夹ID：{}", userId, folderId, e);
@@ -455,7 +455,7 @@ public class FileManagementController {
     /**
      * 构建层级结构的辅助方法
      */
-    private HierarchyResponse buildHierarchyStructure(List<File> files, List<Folder> folders, Long userId) {
+    private HierarchyResponse buildHierarchyStructure(List<File> files, List<Folder> folders, Long userId,int kind) {
         HierarchyResponse response = new HierarchyResponse();
         
         // 过滤当前用户的文件和文件夹（服务层已经过滤，这里再次确认）
@@ -466,10 +466,10 @@ public class FileManagementController {
         List<Folder> userFolders = folders.stream()
                 .filter(folder -> folder.getUserId().equals(userId) && !folder.getIsDeleted())
                 .collect(java.util.stream.Collectors.toList());
-
+        System.out.println(userFolders);
         // 构建文件夹层级结构
-        List<FolderNode> folderNodes = buildFolderHierarchy(userFolders, userId);
-        
+        List<FolderNode> folderNodes = buildFolderHierarchy(userFolders, userId, kind);
+        System.out.println(folderNodes);
         // 构建文件节点（按文件夹分组）
         List<FileNode> fileNodes = userFiles.stream()
                 .map(this::convertToFileNode)
@@ -484,22 +484,35 @@ public class FileManagementController {
     /**
      * 构建文件夹层级结构
      */
-    private List<FolderNode> buildFolderHierarchy(List<Folder> folders, Long userId) {
+    private List<FolderNode> buildFolderHierarchy(List<Folder> folders, Long userId, int kind) {
         // 创建文件夹ID到文件夹的映射
         java.util.Map<Long, Folder> folderMap = folders.stream()
                 .collect(java.util.stream.Collectors.toMap(Folder::getId, folder -> folder));
-
+        System.out.println("folderMap"+folderMap);
         // 找到根文件夹（parentId为0或null的文件夹）
         List<FolderNode> rootFolders = new java.util.ArrayList<>();
-        
-        for (Folder folder : folders) {
-            if (folder.getParentId() == null || folder.getParentId() == 0) {
-                FolderNode node = convertToFolderNode(folder);
-                buildFolderChildren(node, folderMap, userId);
-                rootFolders.add(node);
+
+        if (kind==1) {
+            for (Folder folder : folders) {
+                if (folder.getParentId() == null || folder.getParentId() == 0) {
+                    FolderNode node = convertToFolderNode(folder);
+                    buildFolderChildren(node, folderMap, userId);
+                    rootFolders.add(node);
+                }
             }
         }
 
+        if (kind==2) {
+            for (Folder folder : folders) {
+
+                FolderNode node = convertToFolderNode(folder);
+                buildFolderChildren(node, folderMap, userId);
+                rootFolders.add(node);
+
+            }
+        }
+
+        System.out.println("rootFolders"+rootFolders);
         return rootFolders;
     }
 

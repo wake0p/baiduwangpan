@@ -4,6 +4,7 @@ import ch.qos.logback.core.net.server.Client;
 import com.baidu.netdisk.entity.User;
 import com.baidu.netdisk.login.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,9 +27,12 @@ public class UserController {
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9]{3,}$");
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^.{8,}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{11}$");
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
-    private static final String UPLOAD_DIR = "uploads/avatars";
-
+    public String getAvatarDir() {
+        return uploadDir + "/avatars";
+    }
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> loginData, HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
@@ -237,7 +241,7 @@ public class UserController {
 
         try {
             // 创建存储目录
-            Path uploadPath = Paths.get(UPLOAD_DIR);
+            Path uploadPath = Paths.get(getAvatarDir());
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -250,8 +254,8 @@ public class UserController {
             file.transferTo(filePath);
 
             // 获取文件的存储路径
-            String avatarUrl = UPLOAD_DIR + "/" + fileName;
-
+            String avatarUrl = getAvatarDir() + "/" + fileName;
+            System.out.println(avatarUrl);
             // 更新用户头像信息
             User user = userService.updateAvatar(username, avatarUrl);
 
@@ -269,6 +273,30 @@ public class UserController {
 
         return result;
     }
+
+    @GetMapping("/userList")
+    public Map<String, Object> getUserList() {
+        Map<String, Object> result = new HashMap<>();
+        List<User> userList = userService.getAllUsers();
+        result.put("success", true);
+        result.put("userList", userList);
+        return result;
+    }
+    @PostMapping("/deleteUser")
+    public Map<String, Object> deleteUser(@RequestBody Map<String, String> deleteData) {
+        Map<String, Object> result = new HashMap<>();
+        String username = deleteData.get("username");
+        try {
+            userService.deleteUser(username);
+            result.put("success", true);
+            result.put("message", "用户删除成功");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "用户删除失败: " + e.getMessage());
+        }
+        return result;
+    }
+
     @PostMapping("/banUser")
     public Map<String, Object> banUser(@RequestBody Map<String, String> banData) {
         Map<String, Object> result = new HashMap<>();
@@ -283,13 +311,34 @@ public class UserController {
         }
         return result;
     }
-    @GetMapping("/userList")
-    public Map<String, Object> getUserList() {
+    // 解除封禁接口
+    @PostMapping("/unbanUser")
+    public Map<String, Object> unbanUser(@RequestBody Map<String, String> unbanData) {
         Map<String, Object> result = new HashMap<>();
-        List<User> userList = userService.getAllUsers();
-        result.put("success", true);
-        result.put("userList", userList);
+        String username = unbanData.get("username");
+        User user = userService.unbanUser(username);
+        if (user != null) {
+            result.put("success", true);
+            result.put("message", "用户解除封禁成功");
+        } else {
+            result.put("success", false);
+            result.put("message", "未找到该用户");
+        }
         return result;
     }
-
+    @PostMapping("/setAdmin")
+    public Map<String, Object> setAdmin(@RequestBody Map<String, Object> setAdminData) {
+        Map<String, Object> result = new HashMap<>();
+        String username = (String) setAdminData.get("username");
+        boolean isAdmin = (boolean) setAdminData.get("isAdmin");
+        User user = userService.setAdmin(username, isAdmin);
+        if (user != null) {
+            result.put("success", true);
+            result.put("message", "用户权限设置成功");
+        } else {
+            result.put("success", false);
+            result.put("message", "未找到该用户");
+        }
+        return result;
+    }
 }

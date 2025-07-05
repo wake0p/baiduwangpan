@@ -15,5 +15,8 @@ public interface UserService {
     User updateAvatar(String username, String newAvatar);
     List<User> getAllUsers();
     User banUser(String username);
+    void deleteUser(String username);
+    User unbanUser(String username);
+    User setAdmin(String username, boolean isAdmin);
 }
 
